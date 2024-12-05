@@ -1,0 +1,235 @@
+\documentclass{bscs}
+\usepackage[colorlinks=true, linkcolor=black, urlcolor=blue]{hyperref}
+\usepackage{graphicx}
+\usepackage{enumitem}
+
+\title{VidSense}
+\author{Muhammad Bilal Taha 25132 (Group Lead)\\
+         [Muhammad Muaz Arif]\\
+         [Muhammad Wasay]\\
+         [Syed Bilal Ali]\\
+         [Ali Iqbal]}
+
+
+\begin{document}
+\frontmatter
+\maketitle
+
+\begin{acknowledgement}
+We would like to express our sincere gratitude to our project advisors, Dr Muhammad Saeed and 
+Umair Nazir, for their invaluable guidance and support throughout the development of this 
+report. We also extend our appreciation to our university and department for providing the 
+necessary resources and opportunities to pursue this project. 
+\end{acknowledgement}
+
+\tableofcontents
+\listoftables
+\addcontentsline{toc}{chapter}{List of Tables}
+
+
+\mainmatter
+\chapter{Problem Statement}
+The rapid increase in video content across educational platforms and social media has led to a growing challenge for users in efficiently consuming lengthy videos. VidSense aims to address this problem by offering an intelligent video summarization tool that automatically generates key highlights from videos. The tool will not only summarize the content but will also provide emotionally enriched summaries through sentiment analysis, making the information more engaging.
+With a focus on multilingual support, VidSense will cater to both Arabic and English-speaking audiences, providing summaries in both languages. Users will also be able to interact with the system via a chatbot, enabling them to easily navigate through video highlights.
+VidSense targets educators, content creators, researchers, and professionals, allowing them to quickly gain insights from long educational or research videos, improving both time efficiency and content accessibility.
+
+
+
+\chapter{System Requirements}
+
+\section{Functional Requirements}
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|c|p{5cm}|p{9cm}|}
+        \hline
+        \textbf{No.} & \textbf{Requirement} & \textbf{Description} \\
+        \hline
+        1 & Video Summarization & The system should extract important timestamps and generate concise video highlights. \\
+        \hline
+        2 & Multilingual Support & VidSense must support both Arabic and English languages for captions and summaries. \\
+        \hline
+        3 & Sentiment Analysis & The system must analyze video captions and assign sentiment scores (positive, neutral, or negative) to timestamps. \\
+        \hline
+        4 & Chatbot Assistance & The system should feature a chatbot that assists users in navigating through video highlights. \\
+        \hline
+        5 & Video Clips Generation & The system will generate video clips for the identified key segments based on timestamps. \\
+        \hline
+        6 & User Interaction & Users should be able to input video URLs and interact with the generated video summaries easily. \\
+        \hline
+        7 & Video Caption Extraction & The system should extract captions from the provided video URL. \\
+        \hline
+    \end{tabular}
+    \caption{Functional Requirements}
+\end{table}
+\newpage
+
+\section{Non-functional Requirements}
+
+\begin{table}[h]
+    \centering
+    \begin{tabular}{|c|p{5cm}|p{9cm}|}
+        \hline
+        \textbf{No.} & \textbf{Requirement} & \textbf{Description} \\
+        \hline
+        8 & Performance & The system should be able to process a video and generate highlights. \\
+        \hline
+        9 & Security & VidSense must encrypt all user data, including video URLs and user interactions. \\
+        \hline
+        10 & Scalability & The system should be able to handle videos with up to 30 minutes of duration. \\
+        \hline
+        11 & Reliability & VidSense must be operational 99 percent of the time, with built-in failover mechanisms. \\
+        \hline
+        12 & Maintainability & The system must be modular, allowing for easy updates to individual components (e.g., NLP models, chatbot, UI). \\
+        \hline
+        13 & User Experience & The interface should be intuitive and easy to navigate. \\
+        \hline
+    \end{tabular}
+    \caption{Non-Functional Requirements}
+\end{table}
+
+\section{User Interface Requirements}
+
+The user interface of VidSense will consist of the following components:
+
+\begin{enumerate}
+    \item \textbf{Home Page}
+    \begin{itemize}
+        \item A clean and simple layout where users can input the video URL.
+        \item Language preference option (Arabic/English).
+        \item Display buttons to interact with the chatbot.
+    \end{itemize}
+
+    \item \textbf{Video Summary Page}
+    \begin{itemize}
+        \item Display video thumbnail and a list of timestamped highlights.
+        \item Sentiment scores next to each highlighted segment (positive, neutral, negative).
+        \item Clickable video clips representing key moments.
+    \end{itemize}
+
+    \item \textbf{Chatbot Interface}
+    \begin{itemize}
+        \item A text-based interface where users can type queries and interact with the system.
+        \item Users can ask the chatbot to provide specific highlights or jump to certain segments.
+    \end{itemize}
+
+    \end{enumerate}
+
+\newpage
+
+\chapter{Functional Requirements Specification}
+
+\section{Stakeholders}
+
+\begin{itemize}
+    \item \textbf{End Users:} Summarizing long lectures and highlighting key emotional moments.
+    
+    \item \textbf{Content Providers:} Summarizing conference talks and research presentations.
+
+    \item \textbf{Developers:} Helping content creators generate quick, sentiment-based video summary.
+    
+\end{itemize}
+
+\section{Actors and Goals}
+
+\begin{itemize}
+    \item \textbf{End User:} To quickly get summarized video content and interact with video highlights using a chatbot.
+    \item \textbf{System Admin:} To maintain system stability and ensure accurate video summarization. 
+    \item \textbf{Content Provider:} To upload videos for summarization and ensure the content is correctly processed.    
+\end{itemize}
+\newpage
+
+\section{Use Cases}
+\begin{enumerate}
+\item \textbf{Summarize a Video} 
+
+\begin{itemize}
+    \item \textbf{Actor:}  End User
+    \item \textbf{Goal:} Summarize a video by providing its URL. 
+    
+    \item \textbf{Pre-condition:} The video must have captions.
+
+    \item \textbf{Main Flow:} 
+        \begin{itemize}
+        \item User inputs the video URL on the homepage.
+        \item The system extracts captions from the video.
+        \item Sentiment analysis is applied to the captions.
+        \item Key timestamps and video highlights are generated.
+        \item The system displays the video summary
+        \item The user can interact with the highlights using the chatbot.
+    \end{itemize}
+    
+\end{itemize}
+
+\item \textbf{Chatbot Interaction} 
+
+\begin{itemize}
+    \item \textbf{Actor:}  End User
+    \item \textbf{Goal:} Navigate through the video summary using the chatbot.
+    
+    \item \textbf{Pre-condition:} A video must be summarized.
+
+    \item \textbf{Main Flow:} 
+        \begin{itemize}
+        \item User clicks on the chatbot interface.
+        \item The chatbot asks what part of the video the user wants to explore.
+        \item User inputs a query (e.g., "Show highlights for positive sentiment").
+        \item The system responds with relevant video clips or timestamps.
+    \end{itemize}
+    
+\end{itemize}
+
+
+\item \textbf{Multi-language Support}  
+
+\begin{itemize}
+    \item \textbf{Actor:}  End User
+    \item \textbf{Goal:} Summarize and interact with videos in Arabic or English. 
+    
+    \item \textbf{Pre-condition:} The video must have captions in Arabic or English.
+
+    \item \textbf{Main Flow:} 
+        \begin{itemize}
+        \item User selects the language preference (Arabic or English).
+        \item The system processes the video captions accordingly.
+        \item The system generates the video summary and chatbot interactions in the selected language.
+    \end{itemize}    
+\end{itemize}
+
+\end{enumerate}
+
+\chapter{User Interface Specification}
+
+\item \textbf{Use Case 1: Summarize a Video}
+    \begin{itemize}
+        \item \textbf {UI Design:} The homepage will have a large input field for the video URL, a language selection dropdown, and a submit button. After submission, the video summary page will display the highlights, sentiment analysis, and clickable video clips.
+    \end{itemize}
+
+\item \textbf{Use Case 2: Chatbot Interaction}
+    \begin{itemize}
+        \item \textbf {UI Design:} The chatbot will appear as a small text-based chat window at the bottom of the video summary page. Users will interact with the chatbot through typed commands.
+    \end{itemize}
+
+
+\chapter{Domain Analysis}
+
+The VidSense system will primarily rely on natural language processing (NLP) and sentiment analysis to extract key insights from video captions. The following diagrams describe the flow of data from video URL input to video summary output:
+\\
+
+\item \textbf{Domain Model}
+
+\begin{itemize}
+        \item \textbf {Input:} Video URL 
+        \item \textbf {Process:} 
+        \begin{enumerate}
+        \item {Extract captions}
+        \item {Perform sentiment analysis}
+        \item {Identify timestamps for highlights}
+        \item {Generate video clips based on key timestamps}
+
+        \end{enumerate}
+        \item \textbf {Output:} Video summary with sentiment analysis, highlights, and chatbot interaction.
+        
+    \end{itemize}
+
+\end{document}
