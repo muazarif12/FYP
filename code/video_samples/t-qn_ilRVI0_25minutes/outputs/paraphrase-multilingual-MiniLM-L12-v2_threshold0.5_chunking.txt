@@ -1,0 +1,1452 @@
+Chunk 1 (Score: 0.0015):
+ Hey there, this is Akshay Madan.
+
+Chunk 2 (Score: 0.0014):
+Welcome back to a new video and in this video we are going to cover the most demanded topic that is FlutterBlock. So let me give you one insight that we are only going to cover the theoretical part of FlutterBlock because I bet that nobody on the internet has explained FlutterBlock so theoretically so deeply because you will find so many tutorials, so many video coding tutorials on FlutterBlock. But I have seen a problem that nobody actually understands from those problems because theory is missing because you have not understood the theoretical part why we use block, how to use block, when to use block and why it is so famous, why it is so demanded in the industry, why so many companies are only using FlutterBlock state management.
+
+Chunk 3 (Score: 0.0023):
+Right.
+
+Chunk 4 (Score: 0.0017):
+So this we are going to cover in this video.
+
+Chunk 5 (Score: 0.0013):
+We are going to have coding tutorials very soon. I'm going to prepare a complete project based on FlutterBlock, complete coding sessions on FlutterBlock, but that will come soon.
+
+Chunk 6 (Score: 0.0016):
+So in this video, just try to understand the theoretical part of FlutterBlock.
+
+Chunk 7 (Score: 0.0023):
+Right.
+
+Chunk 8 (Score: 0.0016):
+So I hope you will get it why I'm creating this video.
+
+Chunk 9 (Score: 0.0018):
+So now the purpose is clear. Now what we are going to see in this video is clear.
+
+Chunk 10 (Score: 0.0016):
+Now let's try to understand or grab this concept very deeply.
+
+Chunk 11 (Score: 0.0019):
+So let's put the topic of the day that is FlutterBlock. Now let's put our first question as what is block.
+
+Chunk 12 (Score: 0.0023):
+Right.
+
+Chunk 13 (Score: 0.0013):
+So if I have to answer this question, when we try to create complex applications, when we create bigger applications, I'm not talking about to do applications, but we are going to create a lot of applications.
+
+Chunk 14 (Score: 0.0007):
+I'm not talking about to do application or very small college based projects.
+
+Chunk 15 (Score: 0.0023):
+Right.
+
+Chunk 16 (Score: 0.0013):
+I'm talking about company based projects. When we create, when we join a company, when we're, when a company is making big products, which have to be given to millions of users.
+
+Chunk 17 (Score: 0.0023):
+Right.
+
+Chunk 18 (Score: 0.0005):
+Their complexity is very high.
+
+Chunk 19 (Score: 0.0023):
+Right.
+
+Chunk 20 (Score: 0.0016):
+So what we have to do is we can't just mix our UI layer and our logical layer.
+
+Chunk 21 (Score: 0.0023):
+Right.
+
+Chunk 22 (Score: 0.0017):
+So this is our logic layer where all the logics will be written.
+
+Chunk 23 (Score: 0.0014):
+Let's say, uh, in your application, there is a light button in your application.
+
+Chunk 24 (Score: 0.0017):
+There is a follow button.
+
+Chunk 25 (Score: 0.0023):
+Right.
+
+Chunk 26 (Score: 0.0016):
+So what happens when you click on like button?
+
+Chunk 27 (Score: 0.0011):
+It turns red, or if you have already already liked, it becomes a unread or it gets unfilled.
+
+Chunk 28 (Score: 0.0023):
+Right.
+
+Chunk 29 (Score: 0.0014):
+When you click on follow, what happens? Some APIs are being called or some internal function is getting called UI is getting updated because when you click on follow button, it will turn into unfollow.
+
+Chunk 30 (Score: 0.0023):
+Right.
+
+Chunk 31 (Score: 0.0013):
+You have already followed that person.
+
+Chunk 32 (Score: 0.0023):
+Right.
+
+Chunk 33 (Score: 0.0014):
+So all these logics are written in this logical layer.
+
+Chunk 34 (Score: 0.0015):
+In the complex application and the companies, right.
+
+Chunk 35 (Score: 0.0011):
+I'm not talking about small scale projects.
+
+Chunk 36 (Score: 0.0020):
+There you are using set state.
+
+Chunk 37 (Score: 0.0021):
+You are using.
+
+Chunk 38 (Score: 0.0024):
+Okay.
+
+Chunk 39 (Score: 0.0015):
+If I click on a hard button, then set state, right. Change the state of that red button and call the five is function.
+
+Chunk 40 (Score: 0.0016):
+If we're the, we're in the five is function.
+
+Chunk 41 (Score: 0.0010):
+The document will get updated from light to true.
+
+Chunk 42 (Score: 0.0023):
+Right.
+
+Chunk 43 (Score: 0.0015):
+There will be a boolean.
+
+Chunk 44 (Score: 0.0016):
+So you may be doing this in your school based projects in a college based projects using, you are using set state or you are using provider or gatex.
+
+Chunk 45 (Score: 0.0016):
+That is fine.
+
+Chunk 46 (Score: 0.0009):
+But in complex application, you cannot mix this UI layer with the logical layer.
+
+Chunk 47 (Score: 0.0016):
+You have to have a communication thing between in between.
+
+Chunk 48 (Score: 0.0023):
+Right.
+
+Chunk 49 (Score: 0.0012):
+You have to keep it separate.
+
+Chunk 50 (Score: 0.0019):
+There will be one thing that will be communicating between there that will act as a communication between UI and logical layer.
+
+Chunk 51 (Score: 0.0023):
+Right.
+
+Chunk 52 (Score: 0.0020):
+And there the block plays an important part.
+
+Chunk 53 (Score: 0.0023):
+Right.
+
+Chunk 54 (Score: 0.0017):
+Because, uh, as I just told that in complex application, when you click on that hard button, you can't just set the state too hard to fill to fill to, right.
+
+Chunk 55 (Score: 0.0013):
+So there some API's are need to be called from your backend and that data, the profile data needs to be get updated or some API needs to be get caught.
+
+Chunk 56 (Score: 0.0023):
+Right.
+
+Chunk 57 (Score: 0.0016):
+So there we can't just mix our UI layer with the logical layer and block plays the important part there.
+
+Chunk 58 (Score: 0.0023):
+Right.
+
+Chunk 59 (Score: 0.0019):
+So if I try to explain using a diagram, uh, let's see like this, this is my UI. What do, what I, what do I mean by UI?
+
+Chunk 60 (Score: 0.0016):
+We just took an example.
+
+Chunk 61 (Score: 0.0017):
+There is a hard button.
+
+Chunk 62 (Score: 0.0023):
+Right.
+
+Chunk 63 (Score: 0.0016):
+This hard button is a favorite button.
+
+Chunk 64 (Score: 0.0019):
+Like you can like a post.
+
+Chunk 65 (Score: 0.0017):
+This can be filled or it can be unfilled.
+
+Chunk 66 (Score: 0.0020):
+Something like this.
+
+Chunk 67 (Score: 0.0005):
+There are only two states.
+
+Chunk 68 (Score: 0.0021):
+So this is my UI.
+
+Chunk 69 (Score: 0.0014):
+Let's consider that in our app, there is only one icon.
+
+Chunk 70 (Score: 0.0020):
+That is this hard button filled or not filled.
+
+Chunk 71 (Score: 0.0023):
+Right.
+
+Chunk 72 (Score: 0.0018):
+This is my UI. Otherwise UI can be anything.
+
+Chunk 73 (Score: 0.0015):
+It can be container.
+
+Chunk 74 (Score: 0.0013):
+It can be list view, grid view, anything.
+
+Chunk 75 (Score: 0.0023):
+Right.
+
+Chunk 76 (Score: 0.0016):
+But let's consider that we only have this icon thing.
+
+Chunk 77 (Score: 0.0021):
+So this is my UI.
+
+Chunk 78 (Score: 0.0023):
+Right.
+
+Chunk 79 (Score: 0.0016):
+And this is my data layer.
+
+Chunk 80 (Score: 0.0023):
+Right.
+
+Chunk 81 (Score: 0.0010):
+What is happening in this data layer?
+
+Chunk 82 (Score: 0.0019):
+All my, let's say you are using Firebase.
+
+Chunk 83 (Score: 0.0013):
+Let's say you're using MongoDB. You're using Hive database, any kind of database that you can use.
+
+Chunk 84 (Score: 0.0015):
+So actually, if you will think that the state, whether a person has liked someone else post or not, the state is actually saved in data.
+
+Chunk 85 (Score: 0.0023):
+Right.
+
+Chunk 86 (Score: 0.0013):
+The data is having this thing.
+
+Chunk 87 (Score: 0.0011):
+So data will have a collection or a table of posts.
+
+Chunk 88 (Score: 0.0015):
+And in that post, there will be a list of users who have liked that post.
+
+Chunk 89 (Score: 0.0023):
+Right.
+
+Chunk 90 (Score: 0.0017):
+So in this list, there will be some users.
+
+Chunk 91 (Score: 0.0023):
+Right.
+
+Chunk 92 (Score: 0.0014):
+Let's say this person, the current user has not liked a certain post.
+
+Chunk 93 (Score: 0.0008):
+So that user ID will not be there in this list.
+
+Chunk 94 (Score: 0.0023):
+Right.
+
+Chunk 95 (Score: 0.0015):
+So this is my data. So I just wanted to give you one single idea, simple idea that this is my data where all my things are stored.
+
+Chunk 96 (Score: 0.0021):
+And this is my UI.
+
+Chunk 97 (Score: 0.0023):
+Right.
+
+Chunk 98 (Score: 0.0015):
+Now in school projects and college projects, you can mix it up.
+
+Chunk 99 (Score: 0.0023):
+Right.
+
+Chunk 100 (Score: 0.0016):
+Wherever you are having this UI, as soon as you're going to click on this hard button, you're going to call a Firebase function directly inside that same file.
+
+Chunk 101 (Score: 0.0023):
+Right.
+
+Chunk 102 (Score: 0.0017):
+We do it.
+
+Chunk 103 (Score: 0.0013):
+I have also done it when I was learning Flutter. I have done it.
+
+Chunk 104 (Score: 0.0011):
+I directly called the Firebase function as soon as I clicked on this button.
+
+Chunk 105 (Score: 0.0007):
+But that should not be the case if you're working in bigger companies.
+
+Chunk 106 (Score: 0.0023):
+Right.
+
+Chunk 107 (Score: 0.0016):
+So there is one medium and that is called block.
+
+Chunk 108 (Score: 0.0023):
+Right.
+
+Chunk 109 (Score: 0.0019):
+So let's put the block in between, which is going to act as a communication between the data and my UI and how the communication is going to happen. So communication is going to happen with the help of two things that you need to remember.
+
+Chunk 110 (Score: 0.0016):
+One is event and one is state.
+
+Chunk 111 (Score: 0.0023):
+Right.
+
+Chunk 112 (Score: 0.0019):
+So what will happen is my UI will send a event to my block.
+
+Chunk 113 (Score: 0.0013):
+What are events?
+
+Chunk 114 (Score: 0.0011):
+It's a general English term.
+
+Chunk 115 (Score: 0.0023):
+Right.
+
+Chunk 116 (Score: 0.0013):
+What are events?
+
+Chunk 117 (Score: 0.0014):
+So let's say you are organizing a birthday party.
+
+Chunk 118 (Score: 0.0018):
+So that's an event.
+
+Chunk 119 (Score: 0.0023):
+Right.
+
+Chunk 120 (Score: 0.0013):
+So if you're organizing an event, you are going to call your friends. You are going to call your relatives.
+
+Chunk 121 (Score: 0.0023):
+Right.
+
+Chunk 122 (Score: 0.0018):
+So that's an event.
+
+Chunk 123 (Score: 0.0023):
+Right.
+
+Chunk 124 (Score: 0.0015):
+So in UI, in mobile application or in software development, what are events?
+
+Chunk 125 (Score: 0.0019):
+Let's say you clicked on this hard button.
+
+Chunk 126 (Score: 0.0019):
+So something has happened or something needs to be happened.
+
+Chunk 127 (Score: 0.0023):
+Right.
+
+Chunk 128 (Score: 0.0018):
+So that acts as an event. So when you click on this hard button, that's an event. When you click on a follow button, that's an event.
+
+Chunk 129 (Score: 0.0017):
+Or let's say you are scrolling at the bottom, like you are scrolling through the list and you hit the bottom.
+
+Chunk 130 (Score: 0.0018):
+So that acts as an event.
+
+Chunk 131 (Score: 0.0013):
+So what do you expect there?
+
+Chunk 132 (Score: 0.0017):
+You want more posts to be loaded.
+
+Chunk 133 (Score: 0.0023):
+Right.
+
+Chunk 134 (Score: 0.0016):
+Because that's an event. So when something needs to be happened or something has happened, that is called an event. That is called an event.
+
+Chunk 135 (Score: 0.0015):
+So you understand that all these events will only come from UI because only UI can act as a communication for the user. You can interact with the UI.
+
+Chunk 136 (Score: 0.0002):
+You can't interact with the firebase. You can't interact with the data layer. You can't interact with the models.
+
+Chunk 137 (Score: 0.0023):
+Right.
+
+Chunk 138 (Score: 0.0006):
+You can only interact with UI.
+
+Chunk 139 (Score: 0.0023):
+Right.
+
+Chunk 140 (Score: 0.0014):
+Because you are seeing Instagram.
+
+Chunk 141 (Score: 0.0006):
+You can only scroll through the list. You can only scroll to the grid views in the profile section.
+
+Chunk 142 (Score: 0.0007):
+You can only click on the buttons.
+
+Chunk 143 (Score: 0.0004):
+You can only see the stories circle abiturs.
+
+Chunk 144 (Score: 0.0023):
+Right.
+
+Chunk 145 (Score: 0.0019):
+So that's the UI. So UI will send an event to the block.
+
+Chunk 146 (Score: 0.0019):
+Hey, something has happened. Now something needs to be happened.
+
+Chunk 147 (Score: 0.0023):
+Right.
+
+Chunk 148 (Score: 0.0019):
+So UI will send an event to the block.
+
+Chunk 149 (Score: 0.0018):
+This is clear.
+
+Chunk 150 (Score: 0.0020):
+Now, as soon as an event will be sent to the block, let's say you clicked on this icon, this hard button.
+
+Chunk 151 (Score: 0.0019):
+So that means you want this post to be liked. That means you are liking this post.
+
+Chunk 152 (Score: 0.0023):
+Right.
+
+Chunk 153 (Score: 0.0014):
+Something needs to be sent to the database also.
+
+Chunk 154 (Score: 0.0015):
+Hey, Akshet has liked someone else post.
+
+Chunk 155 (Score: 0.0012):
+So let's update the database.
+
+Chunk 156 (Score: 0.0023):
+Right.
+
+Chunk 157 (Score: 0.0012):
+So for the next time when I open Instagram, I should see that post already being liked by me.
+
+Chunk 158 (Score: 0.0023):
+Right.
+
+Chunk 159 (Score: 0.0014):
+I should only see this field button, not this empty hard button.
+
+Chunk 160 (Score: 0.0023):
+Right.
+
+Chunk 161 (Score: 0.0013):
+So as soon as the event is sent to the block, this block will send a request to my data. A request will be sent to my data.
+
+Chunk 162 (Score: 0.0018):
+Hey, something has happened.
+
+Chunk 163 (Score: 0.0010):
+So I need to update the data.
+
+Chunk 164 (Score: 0.0023):
+Right.
+
+Chunk 165 (Score: 0.0013):
+So as you know that a data takes a request or a server takes a request and it returns a response.
+
+Chunk 166 (Score: 0.0023):
+Right.
+
+Chunk 167 (Score: 0.0016):
+So a response will be sent to the block back. So as soon as this block will receive a response, let's say we got 200 response, that is success response that this data is successfully updated for the Akshet that Akshet has liked a certain post. So 200 responses sent.
+
+Chunk 168 (Score: 0.0015):
+Then what will happen?
+
+Chunk 169 (Score: 0.0018):
+This block will send something back to the my UI.
+
+Chunk 170 (Score: 0.0020):
+Hey, you sent an event that you clicked on like button.
+
+Chunk 171 (Score: 0.0014):
+Now we have already successfully liked your post in the database also in the cache also everything is updated.
+
+Chunk 172 (Score: 0.0023):
+Right.
+
+Chunk 173 (Score: 0.0015):
+So what will block send?
+
+Chunk 174 (Score: 0.0015):
+It will send a state. So this is called state.
+
+Chunk 175 (Score: 0.0014):
+This is the general mechanism.
+
+Chunk 176 (Score: 0.0015):
+Only this is done by block.
+
+Chunk 177 (Score: 0.0015):
+Nothing else. Nothing else.
+
+Chunk 178 (Score: 0.0013):
+You can, you, you can also build apps without using block, but they will not be understand by understood by other developers.
+
+Chunk 179 (Score: 0.0007):
+When someone else will join your company, he will find very hard to read your code.
+
+Chunk 180 (Score: 0.0023):
+Right.
+
+Chunk 181 (Score: 0.0012):
+So this is the purpose that are solved by state management library.
+
+Chunk 182 (Score: 0.0018):
+Simple.
+
+Chunk 183 (Score: 0.0014):
+There are many tutorials on internet which have made this block concept very easy, but they are directly jumping onto the code.
+
+Chunk 184 (Score: 0.0013):
+So I wanted to explain the theoretical part because let's, let's go deeper into it.
+
+Chunk 185 (Score: 0.0019):
+So now let's try to focus on this part UI and block because most of them, mostly you will be working with this and firebase functions.
+
+Chunk 186 (Score: 0.0015):
+You already know how to write or database functions, API requests. You already know how to write, right?
+
+Chunk 187 (Score: 0.0017):
+Or that we can cover in our coding tutorials, but let's try to go deeper into this UI and block part.
+
+Chunk 188 (Score: 0.0021):
+So this is my UI and this is my block.
+
+Chunk 189 (Score: 0.0023):
+Right.
+
+Chunk 190 (Score: 0.0019):
+Now, uh, you click on this hard button.
+
+Chunk 191 (Score: 0.0009):
+Currently it is unfit.
+
+Chunk 192 (Score: 0.0019):
+And you want it, you want to like this post, right?
+
+Chunk 193 (Score: 0.0020):
+So what you will say this whenever a user will click on this.
+
+Chunk 194 (Score: 0.0015):
+So what will happen?
+
+Chunk 195 (Score: 0.0015):
+This icon button or this icon will be wrapped with an inkwell or you can wrap it with a gesture detector.
+
+Chunk 196 (Score: 0.0011):
+I'm talking about flutter.
+
+Chunk 197 (Score: 0.0018):
+So if you are from some other front end framework, you can use your own click, uh, widgets, right?
+
+Chunk 198 (Score: 0.0016):
+So in my case, there is inkwell and gesture detector.
+
+Chunk 199 (Score: 0.0017):
+So when I'm going to click on this hard button, I will send a event to my block.
+
+Chunk 200 (Score: 0.0023):
+Right.
+
+Chunk 201 (Score: 0.0016):
+And I can name this event.
+
+Chunk 202 (Score: 0.0016):
+I'm sure I'm going to show you how you can do it.
+
+Chunk 203 (Score: 0.0011):
+I'm going to name this event. So this event name should also be unique. So basically this event is a class and this class name should be unique. And you know that we can't have, uh, same class names, right?
+
+Chunk 204 (Score: 0.0019):
+So this is an event.
+
+Chunk 205 (Score: 0.0017):
+Now this block can have multiple types of states, right?
+
+Chunk 206 (Score: 0.0013):
+So as soon as you're going to click on this, uh, like button, it's very uncertain. It's very uncertain that it's not going to get updated as soon as you're going to click it.
+
+Chunk 207 (Score: 0.0013):
+There will be some time gap, right?
+
+Chunk 208 (Score: 0.0011):
+Because it has to go to the database.
+
+Chunk 209 (Score: 0.0013):
+It has to update it.
+
+Chunk 210 (Score: 0.0018):
+It has to take the response, come back, right?
+
+Chunk 211 (Score: 0.0021):
+So as soon as you're going to click on this, uh, icon, what I will say, what I will do is I will return a loading state.
+
+Chunk 212 (Score: 0.0019):
+Basically in this thing, we don't actually, uh, like show the loading state, but let's say you are going to follow someone, right?
+
+Chunk 213 (Score: 0.0018):
+So what you can say is you can have a snack bar or you can have a bottom sheet.
+
+Chunk 214 (Score: 0.0013):
+Hey, we are following a Chris. We are following this person.
+
+Chunk 215 (Score: 0.0013):
+Just wait for a second.
+
+Chunk 216 (Score: 0.0021):
+Right?
+
+Chunk 217 (Score: 0.0022):
+You can have the snack bar or you can have a bottom sheet message or alert box, right?
+
+Chunk 218 (Score: 0.0018):
+Or let's say you are, you have created a post and you want to delete it, right?
+
+Chunk 219 (Score: 0.0015):
+So this is going to take some time.
+
+Chunk 220 (Score: 0.0018):
+So as soon as your block is going to receive an event, delete event, it is going to send a state.
+
+Chunk 221 (Score: 0.0021):
+Hey, we are loading it.
+
+Chunk 222 (Score: 0.0017):
+So you can show alert box.
+
+Chunk 223 (Score: 0.0018):
+You can show a snack bar, right?
+
+Chunk 224 (Score: 0.0017):
+So as soon as, uh, so as, uh, as the alert will be visible to the user, the user will know, Hey, I have to wait for some time.
+
+Chunk 225 (Score: 0.0021):
+Right?
+
+Chunk 226 (Score: 0.0014):
+And now as the block will receive a success event from the database that here, we have successfully deleted it.
+
+Chunk 227 (Score: 0.0014):
+We have successfully liked the post.
+
+Chunk 228 (Score: 0.0012):
+Then it will have another state.
+
+Chunk 229 (Score: 0.0021):
+Right?
+
+Chunk 230 (Score: 0.0014):
+So that state will be called success state.
+
+Chunk 231 (Score: 0.0017):
+And again, you can have another UI thing. UI will be updated.
+
+Chunk 232 (Score: 0.0014):
+So you can have a success snack bar.
+
+Chunk 233 (Score: 0.0016):
+You can have a success bottom sheet.
+
+Chunk 234 (Score: 0.0016):
+Hey, you have successfully liked your post. Hey, we have successfully deleted your post.
+
+Chunk 235 (Score: 0.0021):
+So something like that.
+
+Chunk 236 (Score: 0.0021):
+Right?
+
+Chunk 237 (Score: 0.0014):
+So now this was a simple funder, but how we are going to code it.
+
+Chunk 238 (Score: 0.0018):
+So let me show you.
+
+Chunk 239 (Score: 0.0021):
+Right?
+
+Chunk 240 (Score: 0.0015):
+So in block in flutter block, basically you only need to remember three things and 90% of the cases you are going to use these things only.
+
+Chunk 241 (Score: 0.0021):
+Right?
+
+Chunk 242 (Score: 0.0018):
+So let's talk about the UI. So in the UI or let's talk about the files.
+
+Chunk 243 (Score: 0.0021):
+Right?
+
+Chunk 244 (Score: 0.0019):
+So whenever you have to create a block, let's say you are creating a block for a post section.
+
+Chunk 245 (Score: 0.0013):
+So this is my Instagram here.
+
+Chunk 246 (Score: 0.0015):
+My stories are there.
+
+Chunk 247 (Score: 0.0016):
+And this is my home section where all my posts are there.
+
+Chunk 248 (Score: 0.0021):
+Right?
+
+Chunk 249 (Score: 0.0008):
+So as soon as you are going to open the Instagram, it cannot load the updated post instantaneously.
+
+Chunk 250 (Score: 0.0021):
+Right?
+
+Chunk 251 (Score: 0.0009):
+It has to go to the server, fetch some data.
+
+Chunk 252 (Score: 0.0021):
+Right?
+
+Chunk 253 (Score: 0.0021):
+So let's not go inside this part, but let's see.
+
+Chunk 254 (Score: 0.0017):
+So you are creating a block for home section.
+
+Chunk 255 (Score: 0.0021):
+Right?
+
+Chunk 256 (Score: 0.0018):
+So you can create a home block.
+
+Chunk 257 (Score: 0.0021):
+Right?
+
+Chunk 258 (Score: 0.0008):
+So it will have three files.
+
+Chunk 259 (Score: 0.0016):
+So the first will be home block events dot dot.
+
+Chunk 260 (Score: 0.0015):
+Here all my events will be written.
+
+Chunk 261 (Score: 0.0014):
+So what can happen in the events?
+
+Chunk 262 (Score: 0.0017):
+So you have to think in the home section, what can happen?
+
+Chunk 263 (Score: 0.0015):
+You can click on a story. You can click on bottom. There will be bottom bar over here.
+
+Chunk 264 (Score: 0.0013):
+There are different different icons will be there. So you can click on one of the icons that is also happening in the home section.
+
+Chunk 265 (Score: 0.0019):
+You can like the post. You can comment on a post.
+
+Chunk 266 (Score: 0.0017):
+You can try to zoom it or what you can say.
+
+Chunk 267 (Score: 0.0012):
+You can click on the profile photo of that poster.
+
+Chunk 268 (Score: 0.0017):
+Like who has created or that creator who has posted that post.
+
+Chunk 269 (Score: 0.0021):
+Right?
+
+Chunk 270 (Score: 0.0015):
+Or you can like try to report it.
+
+Chunk 271 (Score: 0.0013):
+You can try to follow that person.
+
+Chunk 272 (Score: 0.0021):
+Right?
+
+Chunk 273 (Score: 0.0013):
+So these are all the events. So you have to write all the events in this events file.
+
+Chunk 274 (Score: 0.0021):
+Right?
+
+Chunk 275 (Score: 0.0009):
+And they all will be unique.
+
+Chunk 276 (Score: 0.0015):
+So we have talked about events.
+
+Chunk 277 (Score: 0.0014):
+Now another file will be home block state.
+
+Chunk 278 (Score: 0.0012):
+So in this file, all the states will be written.
+
+Chunk 279 (Score: 0.0015):
+So what will happen?
+
+Chunk 280 (Score: 0.0016):
+So try to interpret it like this. Try to like read it like this.
+
+Chunk 281 (Score: 0.0014):
+If I have sent an event like this, what state should be sent?
+
+Chunk 282 (Score: 0.0012):
+What state should be emitted? So in Flutter or in block states are emitted.
+
+Chunk 283 (Score: 0.0021):
+Right?
+
+Chunk 284 (Score: 0.0017):
+And events are called.
+
+Chunk 285 (Score: 0.0021):
+Right?
+
+Chunk 286 (Score: 0.0012):
+So in states what state will be emitted.
+
+Chunk 287 (Score: 0.0016):
+So one state can be story icon clicked.
+
+Chunk 288 (Score: 0.0017):
+State dot dot.
+
+Chunk 289 (Score: 0.0021):
+Right?
+
+Chunk 290 (Score: 0.0015):
+Another can be profile.
+
+Chunk 291 (Score: 0.0011):
+Dp clicked state dot dot. Now try to understand what will happen if I click on a dp of some other user. I should navigate to the user profile.
+
+Chunk 292 (Score: 0.0021):
+Right?
+
+Chunk 293 (Score: 0.0017):
+So as soon as my UI will receive this state. As you know that I'm going to receive a state from the block. So as soon as I will receive a state from my block, I should navigate my UI.
+
+Chunk 294 (Score: 0.0018):
+Perfect.
+
+Chunk 295 (Score: 0.0015):
+Let's say there is profile report state dot dot.
+
+Chunk 296 (Score: 0.0012):
+If I'm trying to report a person who has posted something unusual on Instagram or in some social media. And I want to report this person or I want to report this post.
+
+Chunk 297 (Score: 0.0016):
+What will happen in the UI?
+
+Chunk 298 (Score: 0.0015):
+A bottom sheet will appear.
+
+Chunk 299 (Score: 0.0012):
+Hey, you want to report it. What are the reasons you want to give to report this person?
+
+Chunk 300 (Score: 0.0021):
+Right?
+
+Chunk 301 (Score: 0.0015):
+And all the reasons will be written.
+
+Chunk 302 (Score: 0.0016):
+And there will be one final button report.
+
+Chunk 303 (Score: 0.0018):
+And there will be one more event that will be sent to the block.
+
+Chunk 304 (Score: 0.0016):
+Hey, the person confirms the report. Let's report it.
+
+Chunk 305 (Score: 0.0012):
+Let's send this request to the database.
+
+Chunk 306 (Score: 0.0021):
+Right?
+
+Chunk 307 (Score: 0.0013):
+So these are the certain states.
+
+Chunk 308 (Score: 0.0015):
+But these are the events.
+
+Chunk 309 (Score: 0.0014):
+These are the states.
+
+Chunk 310 (Score: 0.0007):
+They are just the classes.
+
+Chunk 311 (Score: 0.0021):
+Right?
+
+Chunk 312 (Score: 0.0015):
+Where the actual logic is written.
+
+Chunk 313 (Score: 0.0017):
+If I'm clicking on the report.
+
+Chunk 314 (Score: 0.0010):
+Where is that function written which is going to send an API request to my database.
+
+Chunk 315 (Score: 0.0021):
+Right?
+
+Chunk 316 (Score: 0.0013):
+So that will be written in my third file that is called home block dot dot.
+
+Chunk 317 (Score: 0.0011):
+There all the functions will be written.
+
+Chunk 318 (Score: 0.0021):
+Right?
+
+Chunk 319 (Score: 0.0019):
+Now this is fine.
+
+Chunk 320 (Score: 0.0017):
+This is all my logical layer. This is all my logical layer.
+
+Chunk 321 (Score: 0.0015):
+But how my events, how my states, how I'm going to listen to these events and states.
+
+Chunk 322 (Score: 0.0021):
+Right?
+
+Chunk 323 (Score: 0.0011):
+How will I interpret that?
+
+Chunk 324 (Score: 0.0015):
+Hey, how will my block will know that the user has user wants this event to be called or user wants this state to be emitted?
+
+Chunk 325 (Score: 0.0015):
+How?
+
+Chunk 326 (Score: 0.0015):
+How my UI will be communicating with the block? So for that, we have certain widgets that are built inside the block library. So as if you want to use block for flutter, you know that you need to write some libraries or you need to define some dependencies in pubspec.tml file.
+
+Chunk 327 (Score: 0.0021):
+Right?
+
+Chunk 328 (Score: 0.0016):
+So when you are going to use a block flutter block package.
+
+Chunk 329 (Score: 0.0017):
+So in that you get some widgets.
+
+Chunk 330 (Score: 0.0014):
+So I'm going to define them.
+
+Chunk 331 (Score: 0.0014):
+I'm going to tell you the main three widgets, which are used widely and 90% of the cases only these will be used.
+
+Chunk 332 (Score: 0.0017):
+First is block listener. Second is block builder.
+
+Chunk 333 (Score: 0.0012):
+Third is block consumer.
+
+Chunk 334 (Score: 0.0021):
+Right?
+
+Chunk 335 (Score: 0.0017):
+So what happens?
+
+Chunk 336 (Score: 0.0021):
+Let's say you are having this page.
+
+Chunk 337 (Score: 0.0021):
+Right?
+
+Chunk 338 (Score: 0.0016):
+And this is a container basically. And in this container, you are having list view.
+
+Chunk 339 (Score: 0.0017):
+You are having column.
+
+Chunk 340 (Score: 0.0017):
+You are having grid view, anything you can have.
+
+Chunk 341 (Score: 0.0021):
+Right?
+
+Chunk 342 (Score: 0.0020):
+So what will you will do is, you will wrap this container with a block listener. And this block listener will have just a second. This block listener will have home block, comma, home state.
+
+Chunk 343 (Score: 0.0018):
+And then finally, you can have listener property, which will take current.
+
+Chunk 344 (Score: 0.0012):
+So what is the difference between block listener, block builder and block consumer? So block listener will not build anything.
+
+Chunk 345 (Score: 0.0011):
+It will just listen to the state.
+
+Chunk 346 (Score: 0.0021):
+Right?
+
+Chunk 347 (Score: 0.0018):
+So you know that UI is going to listen or the block is going to emit some state. So my UI to want my UI to listen to the states.
+
+Chunk 348 (Score: 0.0018):
+I can use a block listener.
+
+Chunk 349 (Score: 0.0011):
+It will only have functions over here.
+
+Chunk 350 (Score: 0.0011):
+You can change the state of the UI, but you cannot build something.
+
+Chunk 351 (Score: 0.0021):
+Right?
+
+Chunk 352 (Score: 0.0016):
+So let me give you one example.
+
+Chunk 353 (Score: 0.0018):
+Let's say there is some button over here. When you want to click on this button, you want a snack bar to appear. You know that snack bar, scaffold messenger dot show snack bar is there.
+
+Chunk 354 (Score: 0.0021):
+Right?
+
+Chunk 355 (Score: 0.0019):
+You want that snack bar to be there, or you want that alert box to appear on your screen.
+
+Chunk 356 (Score: 0.0021):
+Right?
+
+Chunk 357 (Score: 0.0013):
+So here you're not building something.
+
+Chunk 358 (Score: 0.0011):
+You're just running a function because you know that these are just functions.
+
+Chunk 359 (Score: 0.0021):
+Right?
+
+Chunk 360 (Score: 0.0016):
+So in the listener, you can say that, Hey, if my current, what is this previous? What is this current?
+
+Chunk 361 (Score: 0.0014):
+So they are basically states. So if my previous state, if my current state, so we are going to focus on current state. So whatever state I'm going to get that will act as my current state.
+
+Chunk 362 (Score: 0.0018):
+So if my current state is show snack bar success state, then you are going to run a function called staff scaffold messenger dot shows, but something like this.
+
+Chunk 363 (Score: 0.0007):
+But here, you know that I'm not building anything. I don't build a container.
+
+Chunk 364 (Score: 0.0005):
+I do not build a list view, grid view, anything.
+
+Chunk 365 (Score: 0.0016):
+I'm just listening to a state and I'm based on the state that I'm getting from the blog.
+
+Chunk 366 (Score: 0.0017):
+I'm going to run some functions here.
+
+Chunk 367 (Score: 0.0011):
+This function can have a set state function also.
+
+Chunk 368 (Score: 0.0021):
+Right?
+
+Chunk 369 (Score: 0.0016):
+Let's say you are going to click on this button and you want this five to become a state. You want this five to become six.
+
+Chunk 370 (Score: 0.0021):
+Right?
+
+Chunk 371 (Score: 0.0014):
+This is a five and you want this five to become six.
+
+Chunk 372 (Score: 0.0016):
+That is a counter example.
+
+Chunk 373 (Score: 0.0021):
+Right?
+
+Chunk 374 (Score: 0.0015):
+So you can use a block listener and you can just update the UI.
+
+Chunk 375 (Score: 0.0021):
+Right?
+
+Chunk 376 (Score: 0.0018):
+You can use a block listener for that.
+
+Chunk 377 (Score: 0.0017):
+Now, what is block builder? Let's come to block builder now. So for block builder, let me give an example.
+
+Chunk 378 (Score: 0.0013):
+Let's say this is an Instagram app. And as soon as you're going to click on the Instagram icon, the app will open.
+
+Chunk 379 (Score: 0.0021):
+Right?
+
+Chunk 380 (Score: 0.0012):
+So as soon as the app will open, it will call some APIs from the back end.
+
+Chunk 381 (Score: 0.0014):
+Hey, I want to fetch the latest post for this user.
+
+Chunk 382 (Score: 0.0021):
+Right?
+
+Chunk 383 (Score: 0.0015):
+So in the current state, the initial event will be called.
+
+Chunk 384 (Score: 0.0021):
+Right?
+
+Chunk 385 (Score: 0.0017):
+So you know that the block takes the events and it emits the state.
+
+Chunk 386 (Score: 0.0012):
+So event will be sent as initial fetch event.
+
+Chunk 387 (Score: 0.0021):
+Right?
+
+Chunk 388 (Score: 0.0010):
+The fetch event will be sent to the block that here the user wants to fetch the data from the database.
+
+Chunk 389 (Score: 0.0021):
+Right?
+
+Chunk 390 (Score: 0.0013):
+So this is an initial fetch event.
+
+Chunk 391 (Score: 0.0021):
+Right?
+
+Chunk 392 (Score: 0.0018):
+And this block will send the success state or the error state, the loading state.
+
+Chunk 393 (Score: 0.0021):
+Right?
+
+Chunk 394 (Score: 0.0012):
+These three states can be there.
+
+Chunk 395 (Score: 0.0021):
+Right?
+
+Chunk 396 (Score: 0.0017):
+So what I can say that as soon as I'm going to open the app, I want to build something because it's empty, right?
+
+Chunk 397 (Score: 0.0008):
+It's an empty scaffold.
+
+Chunk 398 (Score: 0.0005):
+There is nothing on the screen.
+
+Chunk 399 (Score: 0.0017):
+So what I should show on the screen.
+
+Chunk 400 (Score: 0.0021):
+Right?
+
+Chunk 401 (Score: 0.0017):
+So I will wrap my UI with a block builder.
+
+Chunk 402 (Score: 0.0009):
+Basically, we don't do rapid draft a complete page with a block builder.
+
+Chunk 403 (Score: 0.0015):
+But let's say you want to just build something.
+
+Chunk 404 (Score: 0.0008):
+I'm not talking about listening to the states that are going to come afterwards.
+
+Chunk 405 (Score: 0.0019):
+But let's focus on the block builder.
+
+Chunk 406 (Score: 0.0021):
+Right?
+
+Chunk 407 (Score: 0.0016):
+So when you want to update the UI, when you want to show something else, then you use block builder.
+
+Chunk 408 (Score: 0.0021):
+Right?
+
+Chunk 409 (Score: 0.0017):
+So based on this, it will also have a home block because we are talking about home feature. So home block and home state.
+
+Chunk 410 (Score: 0.0021):
+Right?
+
+Chunk 411 (Score: 0.0010):
+And it will have a builder property.
+
+Chunk 412 (Score: 0.0004):
+It will not have a listener property.
+
+Chunk 413 (Score: 0.0014):
+It will have a builder property. And after this builder property, we also have a block property in which you have to define the file name, which is this home block. So you have to define the class name as home block over here. You can create an instance of this home block.
+
+Chunk 414 (Score: 0.0021):
+So you can define it over here.
+
+Chunk 415 (Score: 0.0013):
+And this builder will again have previous and current.
+
+Chunk 416 (Score: 0.0021):
+Right?
+
+Chunk 417 (Score: 0.0018):
+So over here, I can say if my current and this, these are also states, right? So if my current state is, let's say loading state, because as soon as you're going to open the Instagram, it will be in loading state.
+
+Chunk 418 (Score: 0.0021):
+Right?
+
+Chunk 419 (Score: 0.0019):
+So you can return and yes, in builder, we have a return statement, right?
+
+Chunk 420 (Score: 0.0017):
+Because widgets will be returned.
+
+Chunk 421 (Score: 0.0021):
+Right?
+
+Chunk 422 (Score: 0.0014):
+So return will be a circle loading. Circle loader. Circle loader. We call it circle loading progress indicator.
+
+Chunk 423 (Score: 0.0021):
+Right?
+
+Chunk 424 (Score: 0.0016):
+So circle loader.
+
+Chunk 425 (Score: 0.0013):
+Else if, if my current is success state, that means my database has already sent me the data.
+
+Chunk 426 (Score: 0.0021):
+Right?
+
+Chunk 427 (Score: 0.0017):
+So this will be my success state. If my current state is success state, then you can return home page.
+
+Chunk 428 (Score: 0.0014):
+Basically this home page will be container with story bar with post list view bottom bar anything. So I'm considering it as home page.
+
+Chunk 429 (Score: 0.0015):
+Else if, if my current is, let's say error state.
+
+Chunk 430 (Score: 0.0016):
+Let's say your internet is off.
+
+Chunk 431 (Score: 0.0021):
+Right?
+
+Chunk 432 (Score: 0.0011):
+Error state.
+
+Chunk 433 (Score: 0.0011):
+Then you can return a special container or an error container. This error container is actually a UI which is built by the developers.
+
+Chunk 434 (Score: 0.0012):
+Hey, you are not using, your mobile data is off. Your wifi is, you're not going to the wifi or some error has occurred.
+
+Chunk 435 (Score: 0.0012):
+So this error can happen.
+
+Chunk 436 (Score: 0.0017):
+Or else you can show, again, you can show a loading bar or you can show something else, size box or something else.
+
+Chunk 437 (Score: 0.0021):
+Right?
+
+Chunk 438 (Score: 0.0014):
+So this was the purpose of block builder.
+
+Chunk 439 (Score: 0.0015):
+Here we are returning anything. We are returning some things.
+
+Chunk 440 (Score: 0.0014):
+In listener, we were calling the functions.
+
+Chunk 441 (Score: 0.0017):
+Here we are returning the widgets.
+
+Chunk 442 (Score: 0.0017):
+Now what happens?
+
+Chunk 443 (Score: 0.0017):
+Uh, because when you will be creating actual pages, the actual features there, you will need the combination of block builder and block listener because you want to call the functions.
+
+Chunk 444 (Score: 0.0016):
+Also, some events will be required to call functions and some events will call, uh, will be requiring to update the UI.
+
+Chunk 445 (Score: 0.0021):
+Right?
+
+Chunk 446 (Score: 0.0017):
+Or building, rebuilding the UI.
+
+Chunk 447 (Score: 0.0021):
+Right?
+
+Chunk 448 (Score: 0.0012):
+So for that, we use block consumers.
+
+Chunk 449 (Score: 0.0020):
+So let me clear this.
+
+Chunk 450 (Score: 0.0016):
+So in block consumers, it will again take home block or the name of your block and home state, because it is going to return a state, it will have a block property where you have to define the block which you are going to use.
+
+Chunk 451 (Score: 0.0008):
+It will have a builder property.
+
+Chunk 452 (Score: 0.0016):
+It will have a listener property. And it will have build when, listen when.
+
+Chunk 453 (Score: 0.0015):
+Basically this build when and listen when are also there in builder and listener, block listener respectively. So this build when is also there in block builder, this build listen when is also there in block listener.
+
+Chunk 454 (Score: 0.0018):
+Basically that current and previous, which I told you, right?
+
+Chunk 455 (Score: 0.0013):
+They happen in listen when and build when only. So basically they define when do you want to listen?
+
+Chunk 456 (Score: 0.0011):
+When do you want to build?
+
+Chunk 457 (Score: 0.0021):
+Right?
+
+Chunk 458 (Score: 0.0018):
+So this happens in, uh, listen when and build when.
+
+Chunk 459 (Score: 0.0014):
+So there I did a mistake, but yeah, I hope you understood.
+
+Chunk 460 (Score: 0.0021):
+Right?
+
+Chunk 461 (Score: 0.0019):
+So now in block, you can define your home block.
+
+Chunk 462 (Score: 0.0018):
+In builder, you can define some, uh, like when you want to return some widgets based on the states that you're getting.
+
+Chunk 463 (Score: 0.0016):
+Let's say you get a success state and show the page, you get an error state, then show the error widget.
+
+Chunk 464 (Score: 0.0017):
+If you got a loading state and show a loading bar.
+
+Chunk 465 (Score: 0.0021):
+Right?
+
+Chunk 466 (Score: 0.0016):
+So this builder will return widgets.
+
+Chunk 467 (Score: 0.0015):
+This listener will call functions. So builder builds the widgets, listener calls the functions.
+
+Chunk 468 (Score: 0.0017):
+So let's say you got a state where you want to call a scaffold messenger function. You can call a scaffold bar or scaffold message.
+
+Chunk 469 (Score: 0.0015):
+If you want to show alert, this is also function showed alert dialogue is their function. So you can call that function.
+
+Chunk 470 (Score: 0.0015):
+You want to update the state of a UI, then you can call the set state function over here.
+
+Chunk 471 (Score: 0.0012):
+So this was the general idea of block listener, block builder and block consumer 90% of the cases.
+
+Chunk 472 (Score: 0.0018):
+This is enough.
+
+Chunk 473 (Score: 0.0021):
+Right?
+
+Chunk 474 (Score: 0.0012):
+There are block provider, um, multi block providers, then repository providers.
+
+Chunk 475 (Score: 0.0012):
+They are there also, but 90% of the cases you're going to use this only.
+
+Chunk 476 (Score: 0.0015):
+Now we are going to, uh, see the coding part in the next videos.
+
+Chunk 477 (Score: 0.0018):
+I hope you understood this block concept. If you want to, if you want me to revise, uh, only one thing I want to say that, uh, block basically helps in separating your UI from the logical layer. So that your UI doesn't get mixed with the logical layer.
+
+Chunk 478 (Score: 0.0021):
+Right?
+
+Chunk 479 (Score: 0.0016):
+And you saw that because here, if you will try to create a homepage for an Instagram, will you, as soon as you're going to click on the story icon, you're going to write the navigate navigator function over there itself. Or you will, uh, click on this, uh, follow button for a profile.
+
+Chunk 480 (Score: 0.0012):
+You will call the five is function or the MongoDB function there itself.
+
+Chunk 481 (Score: 0.0021):
+Right?
+
+Chunk 482 (Score: 0.0015):
+So, uh, let's, uh, support this channel. And if you like this video, hit the like button, subscribe to my channel.
+
+Chunk 483 (Score: 0.0019):
+Till next.
+
+Chunk 484 (Score: 0.0018):
+Bye. Bye. Bye. Bye. Bye. Bye. Bye. Bye. Bye. Bye. Bye. Bye. Bye. Bye. Bye. Bye. Bye. Bye. Bye. Bye. Bye. Bye. Bye. Bye. Bye. Bye. Bye. Bye. Bye.
+

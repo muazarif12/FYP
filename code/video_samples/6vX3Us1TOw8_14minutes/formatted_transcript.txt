@@ -1,0 +1,1529 @@
+id: 0
+seek: 0
+start: 0.0
+end: 14.0
+text:  You're not going to want to miss this episode of the AI show where we do text analytics for health. I teared up a little because I did research in this area many moons ago and it is so much better now. Hopefully you'll tune in. We'll see you then.
+tokens: [50365, 509, 434, 406, 516, 281, 528, 281, 1713, 341, 3500, 295, 264, 7318, 855, 689, 321, 360, 2487, 15370, 337, 1585, 13, 286, 535, 1642, 493, 257, 707, 570, 286, 630, 2132, 294, 341, 1859, 867, 34139, 2057, 293, 309, 307, 370, 709, 1101, 586, 13, 10429, 291, 603, 10864, 294, 13, 492, 603, 536, 291, 550, 13, 51065]
+temperature: 0.0
+avg_logprob: -0.19636011123657227
+compression_ratio: 1.4195402298850575
+no_speech_prob: 1.4840536568735962e-12
+---------------------------------------------------------------------------------- 
+id: 1
+seek: 1400
+start: 14.0
+end: 36.36
+text:  Hello and welcome to this episode of the AI show. We're going to learn a little bit about text analytics but for a specific use case for health. I've got Ashley Yeo, Senior Program Manager in the Cognitive Services team. He does text analytics. Why don't you tell us what you do and what you work on my friend.
+tokens: [50365, 2425, 293, 2928, 281, 341, 3500, 295, 264, 7318, 855, 13, 492, 434, 516, 281, 1466, 257, 707, 857, 466, 2487, 15370, 457, 337, 257, 2685, 764, 1389, 337, 1585, 13, 286, 600, 658, 19571, 835, 78, 11, 18370, 8338, 13821, 294, 264, 383, 2912, 2187, 12124, 1469, 13, 634, 775, 2487, 15370, 13, 1545, 500, 380, 291, 980, 505, 437, 291, 360, 293, 437, 291, 589, 322, 452, 1277, 13, 51483]
+temperature: 0.0
+avg_logprob: -0.14391263326009116
+compression_ratio: 1.4553990610328638
+no_speech_prob: 6.358402302938937e-13
+---------------------------------------------------------------------------------- 
+id: 2
+seek: 3636
+start: 36.36
+end: 57.46
+text:  Hi Seth. Happy to be here and to share with you and your audience about text analytics specifically for the healthcare domain. We released and announced back in July text analytics for health as a preview offering for our customers in the healthcare space for obvious reasons because of the pandemic.
+tokens: [50365, 2421, 25353, 13, 8277, 281, 312, 510, 293, 281, 2073, 365, 291, 293, 428, 4034, 466, 2487, 15370, 4682, 337, 264, 8884, 9274, 13, 492, 4736, 293, 7548, 646, 294, 7370, 2487, 15370, 337, 1585, 382, 257, 14281, 8745, 337, 527, 4581, 294, 264, 8884, 1901, 337, 6322, 4112, 570, 295, 264, 5388, 13, 51420]
+temperature: 0.0
+avg_logprob: -0.11185946957818393
+compression_ratio: 1.5957446808510638
+no_speech_prob: 2.343866854076504e-12
+---------------------------------------------------------------------------------- 
+id: 3
+seek: 5746
+start: 57.46
+end: 85.24000000000001
+text:  But we put out this product early in January this year and we make the announcement in July because of the demand for it. So text analytics for health is a product that utilizes NLP natural language processing techniques to process documents in the healthcare space such as doctor's notes, discharge summaries, research articles, those kind of documents in unstructured form.
+tokens: [50365, 583, 321, 829, 484, 341, 1674, 2440, 294, 7061, 341, 1064, 293, 321, 652, 264, 12847, 294, 7370, 570, 295, 264, 4733, 337, 309, 13, 407, 2487, 15370, 337, 1585, 307, 257, 1674, 300, 4976, 5660, 426, 45196, 3303, 2856, 9007, 7512, 281, 1399, 8512, 294, 264, 8884, 1901, 1270, 382, 4631, 311, 5570, 11, 21718, 8367, 4889, 11, 2132, 11290, 11, 729, 733, 295, 8512, 294, 18799, 46847, 1254, 13, 51754]
+temperature: 0.0
+avg_logprob: -0.11521074930826823
+compression_ratio: 1.6025641025641026
+no_speech_prob: 3.033220593098851e-12
+---------------------------------------------------------------------------------- 
+id: 4
+seek: 8524
+start: 85.24
+end: 93.44
+text:  So text analytics for health. I will explain a little bit in a demo about the different features that this text analytics for health API provides.
+tokens: [50365, 407, 2487, 15370, 337, 1585, 13, 286, 486, 2903, 257, 707, 857, 294, 257, 10723, 466, 264, 819, 4122, 300, 341, 2487, 15370, 337, 1585, 9362, 6417, 13, 50775]
+temperature: 0.0
+avg_logprob: -0.2201111726086549
+compression_ratio: 1.805668016194332
+no_speech_prob: 2.4852075692499698e-12
+---------------------------------------------------------------------------------- 
+id: 5
+seek: 8524
+start: 93.44
+end: 108.24
+text:  This is really cool but for those that maybe don't know about text analytics in general, can you give us like maybe a minute blurb on what text analytics is and then let's dive into how we've repurposed text analytics to do some stuff for health as you described. So let's start with text analytics.
+tokens: [50775, 639, 307, 534, 1627, 457, 337, 729, 300, 1310, 500, 380, 458, 466, 2487, 15370, 294, 2674, 11, 393, 291, 976, 505, 411, 1310, 257, 3456, 14257, 65, 322, 437, 2487, 15370, 307, 293, 550, 718, 311, 9192, 666, 577, 321, 600, 1085, 20130, 1744, 2487, 15370, 281, 360, 512, 1507, 337, 1585, 382, 291, 7619, 13, 407, 718, 311, 722, 365, 2487, 15370, 13, 51515]
+temperature: 0.0
+avg_logprob: -0.2201111726086549
+compression_ratio: 1.805668016194332
+no_speech_prob: 2.4852075692499698e-12
+---------------------------------------------------------------------------------- 
+id: 6
+seek: 10824
+start: 108.24
+end: 115.24
+text:  Sure. Text analytics provides four features, four functions if you will, all of them natural language processing techniques to extract information from unstructured text.
+tokens: [50365, 4894, 13, 18643, 15370, 6417, 1451, 4122, 11, 1451, 6828, 498, 291, 486, 11, 439, 295, 552, 3303, 2856, 9007, 7512, 281, 8947, 1589, 490, 18799, 46847, 2487, 13, 50715]
+temperature: 0.0
+avg_logprob: -0.3880262085885713
+compression_ratio: 1.328125
+no_speech_prob: 5.362451802048973e-12
+---------------------------------------------------------------------------------- 
+id: 7
+seek: 11524
+start: 115.24
+end: 130.24
+text:  information such as sentiment analysis being able to define or detect the kind of sentiment in each of those unstructured text, especially from social media, text information, text information.
+tokens: [50365, 1589, 1270, 382, 16149, 5215, 885, 1075, 281, 6964, 420, 5531, 264, 733, 295, 16149, 294, 1184, 295, 729, 18799, 46847, 2487, 11, 2318, 490, 2093, 3021, 11, 2487, 1589, 11, 2487, 1589, 13, 51115]
+temperature: 0.0
+avg_logprob: -0.25010547041893005
+compression_ratio: 1.7379679144385027
+no_speech_prob: 6.270619440362779e-12
+---------------------------------------------------------------------------------- 
+id: 8
+seek: 11524
+start: 130.24
+end: 138.24
+text:  Also, we also recently released something called opinion mining that can tag the sentiment to each of the aspects within that text.
+tokens: [51115, 2743, 11, 321, 611, 3938, 4736, 746, 1219, 4800, 15512, 300, 393, 6162, 264, 16149, 281, 1184, 295, 264, 7270, 1951, 300, 2487, 13, 51515]
+temperature: 0.0
+avg_logprob: -0.25010547041893005
+compression_ratio: 1.7379679144385027
+no_speech_prob: 6.270619440362779e-12
+---------------------------------------------------------------------------------- 
+id: 9
+seek: 13824
+start: 138.24
+end: 156.24
+text:  Text analytics also provide language detection for obvious reasons and we also do key phrase extractions within a blurb like in news articles, also research papers,
+tokens: [50365, 18643, 15370, 611, 2893, 2856, 17784, 337, 6322, 4112, 293, 321, 611, 360, 2141, 9535, 8947, 626, 1951, 257, 14257, 65, 411, 294, 2583, 11290, 11, 611, 2132, 10577, 11, 51265]
+temperature: 0.0
+avg_logprob: -0.27911203734728757
+compression_ratio: 1.4935897435897436
+no_speech_prob: 4.7141002039452484e-12
+---------------------------------------------------------------------------------- 
+id: 10
+seek: 13824
+start: 156.24
+end: 160.24
+text:  providing the pulling out the key phrases in those kind of contexts.
+tokens: [51265, 6530, 264, 8407, 484, 264, 2141, 20312, 294, 729, 733, 295, 30628, 13, 51465]
+temperature: 0.0
+avg_logprob: -0.27911203734728757
+compression_ratio: 1.4935897435897436
+no_speech_prob: 4.7141002039452484e-12
+---------------------------------------------------------------------------------- 
+id: 11
+seek: 16024
+start: 160.24
+end: 172.24
+text:  Lastly, the fourth feature is name entity recognition which is really key in this healthcare feature. Name entity recognition identifies an entity and assign them to a category.
+tokens: [50365, 18072, 11, 264, 6409, 4111, 307, 1315, 13977, 11150, 597, 307, 534, 2141, 294, 341, 8884, 4111, 13, 13866, 13977, 11150, 34597, 364, 13977, 293, 6269, 552, 281, 257, 7719, 13, 50965]
+temperature: 0.0
+avg_logprob: -0.12177538364491564
+compression_ratio: 1.697211155378486
+no_speech_prob: 3.614568280102537e-12
+---------------------------------------------------------------------------------- 
+id: 12
+seek: 16024
+start: 172.24
+end: 181.24
+text:  For instance, it's a person name, whether it's an organization, whether it's a date, and also things like email addresses.
+tokens: [50965, 1171, 5197, 11, 309, 311, 257, 954, 1315, 11, 1968, 309, 311, 364, 4475, 11, 1968, 309, 311, 257, 4002, 11, 293, 611, 721, 411, 3796, 16862, 13, 51415]
+temperature: 0.0
+avg_logprob: -0.12177538364491564
+compression_ratio: 1.697211155378486
+no_speech_prob: 3.614568280102537e-12
+---------------------------------------------------------------------------------- 
+id: 13
+seek: 16024
+start: 181.24
+end: 189.24
+text:  So this is cool. So how did you all repurpose this stuff for health? Let's talk about text analytics specifically for health.
+tokens: [51415, 407, 341, 307, 1627, 13, 407, 577, 630, 291, 439, 1085, 31345, 341, 1507, 337, 1585, 30, 961, 311, 751, 466, 2487, 15370, 4682, 337, 1585, 13, 51815]
+temperature: 0.0
+avg_logprob: -0.12177538364491564
+compression_ratio: 1.697211155378486
+no_speech_prob: 3.614568280102537e-12
+---------------------------------------------------------------------------------- 
+id: 14
+seek: 18924
+start: 189.24
+end: 200.24
+text:  Sure. It's actually not repurposed. Actually, it's an extension of what the text analytics has been offered to our customers.
+tokens: [50365, 4894, 13, 467, 311, 767, 406, 1085, 20130, 1744, 13, 5135, 11, 309, 311, 364, 10320, 295, 437, 264, 2487, 15370, 575, 668, 8059, 281, 527, 4581, 13, 50915]
+temperature: 0.0
+avg_logprob: -0.20503133608971114
+compression_ratio: 1.584033613445378
+no_speech_prob: 5.817436810051646e-12
+---------------------------------------------------------------------------------- 
+id: 15
+seek: 18924
+start: 200.24
+end: 206.24
+text:  We partnered with our team in Microsoft Research Health Next. We started from scratch.
+tokens: [50915, 492, 29865, 365, 527, 1469, 294, 8116, 10303, 5912, 3087, 13, 492, 1409, 490, 8459, 13, 51215]
+temperature: 0.0
+avg_logprob: -0.20503133608971114
+compression_ratio: 1.584033613445378
+no_speech_prob: 5.817436810051646e-12
+---------------------------------------------------------------------------------- 
+id: 16
+seek: 18924
+start: 206.24
+end: 218.24
+text:  We actually took a set of documents from the healthcare space and asked the subject matter experts like physicians, nurses, researchers to annotate those documents.
+tokens: [51215, 492, 767, 1890, 257, 992, 295, 8512, 490, 264, 8884, 1901, 293, 2351, 264, 3983, 1871, 8572, 411, 21966, 11, 17446, 11, 10309, 281, 25339, 473, 729, 8512, 13, 51815]
+temperature: 0.0
+avg_logprob: -0.20503133608971114
+compression_ratio: 1.584033613445378
+no_speech_prob: 5.817436810051646e-12
+---------------------------------------------------------------------------------- 
+id: 17
+seek: 21824
+start: 218.24
+end: 225.24
+text:  To pull the entities, relationships, they are more relevant and critical to the healthcare space.
+tokens: [50365, 1407, 2235, 264, 16667, 11, 6159, 11, 436, 366, 544, 7340, 293, 4924, 281, 264, 8884, 1901, 13, 50715]
+temperature: 0.0
+avg_logprob: -0.19103163861213845
+compression_ratio: 1.6130268199233717
+no_speech_prob: 3.4904221440229533e-12
+---------------------------------------------------------------------------------- 
+id: 18
+seek: 21824
+start: 225.24
+end: 234.24
+text:  So we started from scratch, built that, and then using the latest research for an NLP from Microsoft Research and build the models for that.
+tokens: [50715, 407, 321, 1409, 490, 8459, 11, 3094, 300, 11, 293, 550, 1228, 264, 6792, 2132, 337, 364, 426, 45196, 490, 8116, 10303, 293, 1322, 264, 5245, 337, 300, 13, 51165]
+temperature: 0.0
+avg_logprob: -0.19103163861213845
+compression_ratio: 1.6130268199233717
+no_speech_prob: 3.4904221440229533e-12
+---------------------------------------------------------------------------------- 
+id: 19
+seek: 21824
+start: 234.24
+end: 240.24
+text:  That's really cool. I love how you say it's an extension because you can still use text analytics for the other things you mentioned, but now we're extending it to do specific stuff.
+tokens: [51165, 663, 311, 534, 1627, 13, 286, 959, 577, 291, 584, 309, 311, 364, 10320, 570, 291, 393, 920, 764, 2487, 15370, 337, 264, 661, 721, 291, 2835, 11, 457, 586, 321, 434, 24360, 309, 281, 360, 2685, 1507, 13, 51465]
+temperature: 0.0
+avg_logprob: -0.19103163861213845
+compression_ratio: 1.6130268199233717
+no_speech_prob: 3.4904221440229533e-12
+---------------------------------------------------------------------------------- 
+id: 20
+seek: 24024
+start: 240.24
+end: 247.24
+text:  Why don't we talk a little about the features, maybe some of the use cases, and when people can take a look at it?
+tokens: [50365, 1545, 500, 380, 321, 751, 257, 707, 466, 264, 4122, 11, 1310, 512, 295, 264, 764, 3331, 11, 293, 562, 561, 393, 747, 257, 574, 412, 309, 30, 50715]
+temperature: 0.0
+avg_logprob: -0.1733808782365587
+compression_ratio: 1.49009900990099
+no_speech_prob: 2.0197179432385193e-12
+---------------------------------------------------------------------------------- 
+id: 21
+seek: 24024
+start: 247.24
+end: 262.24
+text:  Sure. Why don't I just go straight to the demo? So what you see here is a web interface visualization tool that is provided in the container that we recently released for public preview.
+tokens: [50715, 4894, 13, 1545, 500, 380, 286, 445, 352, 2997, 281, 264, 10723, 30, 407, 437, 291, 536, 510, 307, 257, 3670, 9226, 25801, 2290, 300, 307, 5649, 294, 264, 10129, 300, 321, 3938, 4736, 337, 1908, 14281, 13, 51465]
+temperature: 0.0
+avg_logprob: -0.1733808782365587
+compression_ratio: 1.49009900990099
+no_speech_prob: 2.0197179432385193e-12
+---------------------------------------------------------------------------------- 
+id: 22
+seek: 26224
+start: 262.24
+end: 271.24
+text:  This visualization tool will allow us to identify the features that we built into text analytics for health.
+tokens: [50365, 639, 25801, 2290, 486, 2089, 505, 281, 5876, 264, 4122, 300, 321, 3094, 666, 2487, 15370, 337, 1585, 13, 50815]
+temperature: 0.0
+avg_logprob: -0.20461421012878417
+compression_ratio: 1.50920245398773
+no_speech_prob: 3.773158434999813e-12
+---------------------------------------------------------------------------------- 
+id: 23
+seek: 26224
+start: 271.24
+end: 277.24
+text:  Alongside this feature, this is, by the way, it's included in the demo, this demo app. It's included in the container. I beg your pardon.
+tokens: [50815, 17457, 1812, 341, 4111, 11, 341, 307, 11, 538, 264, 636, 11, 309, 311, 5556, 294, 264, 10723, 11, 341, 10723, 724, 13, 467, 311, 5556, 294, 264, 10129, 13, 286, 4612, 428, 22440, 13, 51115]
+temperature: 0.0
+avg_logprob: -0.20461421012878417
+compression_ratio: 1.50920245398773
+no_speech_prob: 3.773158434999813e-12
+---------------------------------------------------------------------------------- 
+id: 24
+seek: 27724
+start: 277.24
+end: 289.24
+text:  So I will select an example text here as I just take talking about a patient history. And what you see here is the output from the API.
+tokens: [50365, 407, 286, 486, 3048, 364, 1365, 2487, 510, 382, 286, 445, 747, 1417, 466, 257, 4537, 2503, 13, 400, 437, 291, 536, 510, 307, 264, 5598, 490, 264, 9362, 13, 50965]
+temperature: 0.0
+avg_logprob: -0.142156615624061
+compression_ratio: 1.4742857142857142
+no_speech_prob: 3.4228776497197133e-12
+---------------------------------------------------------------------------------- 
+id: 25
+seek: 27724
+start: 289.24
+end: 300.24
+text:  We send this text into the API. It returns as a JSON, for those who understand what JSON is, and it pulls out four things.
+tokens: [50965, 492, 2845, 341, 2487, 666, 264, 9362, 13, 467, 11247, 382, 257, 31828, 11, 337, 729, 567, 1223, 437, 31828, 307, 11, 293, 309, 16982, 484, 1451, 721, 13, 51515]
+temperature: 0.0
+avg_logprob: -0.142156615624061
+compression_ratio: 1.4742857142857142
+no_speech_prob: 3.4228776497197133e-12
+---------------------------------------------------------------------------------- 
+id: 26
+seek: 30024
+start: 300.24
+end: 311.24
+text:  So the user is able to identify entities related to eight different categories. For instance, diagnosis. We have body structure, symptoms, and the medication as well.
+tokens: [50365, 407, 264, 4195, 307, 1075, 281, 5876, 16667, 4077, 281, 3180, 819, 10479, 13, 1171, 5197, 11, 15217, 13, 492, 362, 1772, 3877, 11, 8332, 11, 293, 264, 13851, 382, 731, 13, 50915]
+temperature: 0.0
+avg_logprob: -0.20935419381382953
+compression_ratio: 1.5843621399176955
+no_speech_prob: 3.3559604747934735e-12
+---------------------------------------------------------------------------------- 
+id: 27
+seek: 30024
+start: 311.24
+end: 318.24
+text:  So they all fall into eight categories. Each category has their own entity type. So you see those being highlighted in the JSON.
+tokens: [50915, 407, 436, 439, 2100, 666, 3180, 10479, 13, 6947, 7719, 575, 641, 1065, 13977, 2010, 13, 407, 291, 536, 729, 885, 17173, 294, 264, 31828, 13, 51265]
+temperature: 0.0
+avg_logprob: -0.20935419381382953
+compression_ratio: 1.5843621399176955
+no_speech_prob: 3.3559604747934735e-12
+---------------------------------------------------------------------------------- 
+id: 28
+seek: 30024
+start: 318.24
+end: 325.24
+text:  But for visualization and simplicity, ease of use, we provide this UI visualization tool.
+tokens: [51265, 583, 337, 25801, 293, 25632, 11, 12708, 295, 764, 11, 321, 2893, 341, 15682, 25801, 2290, 13, 51615]
+temperature: 0.0
+avg_logprob: -0.20935419381382953
+compression_ratio: 1.5843621399176955
+no_speech_prob: 3.3559604747934735e-12
+---------------------------------------------------------------------------------- 
+id: 29
+seek: 32524
+start: 325.24
+end: 337.24
+text:  Also, besides entity recognition, we also extract things that will also link the entity to what we call concepts of vocabularies that are provided in the healthcare space.
+tokens: [50365, 2743, 11, 11868, 13977, 11150, 11, 321, 611, 8947, 721, 300, 486, 611, 2113, 264, 13977, 281, 437, 321, 818, 10392, 295, 2329, 455, 1040, 530, 300, 366, 5649, 294, 264, 8884, 1901, 13, 50965]
+temperature: 0.0
+avg_logprob: -0.1644174966467432
+compression_ratio: 1.550660792951542
+no_speech_prob: 4.825659837004448e-12
+---------------------------------------------------------------------------------- 
+id: 30
+seek: 32524
+start: 337.24
+end: 347.24
+text:  Specifically, if you, I cannot move it down. I move down, it will disappear. But you look at ICD-10, which is the International Conference for Diseases, Classification of Diseases.
+tokens: [50965, 26058, 11, 498, 291, 11, 286, 2644, 1286, 309, 760, 13, 286, 1286, 760, 11, 309, 486, 11596, 13, 583, 291, 574, 412, 14360, 35, 12, 3279, 11, 597, 307, 264, 9157, 22131, 337, 30161, 1957, 11, 9471, 3774, 295, 30161, 1957, 13, 51465]
+temperature: 0.0
+avg_logprob: -0.1644174966467432
+compression_ratio: 1.550660792951542
+no_speech_prob: 4.825659837004448e-12
+---------------------------------------------------------------------------------- 
+id: 31
+seek: 34724
+start: 347.24
+end: 356.24
+text:  And then we have things like SNOMED. This is all the systematic nomenclature of medicine. We also have for medication, RSNORM.
+tokens: [50365, 400, 550, 321, 362, 721, 411, 13955, 5251, 4731, 13, 639, 307, 439, 264, 27249, 297, 4726, 3474, 1503, 295, 7195, 13, 492, 611, 362, 337, 13851, 11, 25855, 45, 2483, 44, 13, 50815]
+temperature: 0.0
+avg_logprob: -0.1662160594288896
+compression_ratio: 1.48868778280543
+no_speech_prob: 4.481537536904501e-12
+---------------------------------------------------------------------------------- 
+id: 32
+seek: 34724
+start: 356.24
+end: 368.24
+text:  So each of those entities that we detect for GERD here, we are also able to link them to all these different concepts, which give us a flexibility for the use cases that our customers are interested in.
+tokens: [50815, 407, 1184, 295, 729, 16667, 300, 321, 5531, 337, 460, 1598, 35, 510, 11, 321, 366, 611, 1075, 281, 2113, 552, 281, 439, 613, 819, 10392, 11, 597, 976, 505, 257, 12635, 337, 264, 764, 3331, 300, 527, 4581, 366, 3102, 294, 13, 51415]
+temperature: 0.0
+avg_logprob: -0.1662160594288896
+compression_ratio: 1.48868778280543
+no_speech_prob: 4.481537536904501e-12
+---------------------------------------------------------------------------------- 
+id: 33
+seek: 36824
+start: 368.24
+end: 379.24
+text:  If there's a particular concept that they use in their business cases, then they just have to go find that abbreviation or that syntax and get a code.
+tokens: [50365, 759, 456, 311, 257, 1729, 3410, 300, 436, 764, 294, 641, 1606, 3331, 11, 550, 436, 445, 362, 281, 352, 915, 300, 35839, 399, 420, 300, 28431, 293, 483, 257, 3089, 13, 50915]
+temperature: 0.0
+avg_logprob: -0.18783523296487742
+compression_ratio: 1.6186046511627907
+no_speech_prob: 3.643535126385267e-12
+---------------------------------------------------------------------------------- 
+id: 34
+seek: 36824
+start: 379.24
+end: 385.24
+text:  And then we also do relation extraction. So for instance, I hear that's a pulse. We identify that as a pulse.
+tokens: [50915, 400, 550, 321, 611, 360, 9721, 30197, 13, 407, 337, 5197, 11, 286, 1568, 300, 311, 257, 17709, 13, 492, 5876, 300, 382, 257, 17709, 13, 51215]
+temperature: 0.0
+avg_logprob: -0.18783523296487742
+compression_ratio: 1.6186046511627907
+no_speech_prob: 3.643535126385267e-12
+---------------------------------------------------------------------------------- 
+id: 35
+seek: 36824
+start: 385.24
+end: 391.24
+text:  And that will give you, you go into the coding system. You'll give a definition for it.
+tokens: [51215, 400, 300, 486, 976, 291, 11, 291, 352, 666, 264, 17720, 1185, 13, 509, 603, 976, 257, 7123, 337, 309, 13, 51515]
+temperature: 0.0
+avg_logprob: -0.18783523296487742
+compression_ratio: 1.6186046511627907
+no_speech_prob: 3.643535126385267e-12
+---------------------------------------------------------------------------------- 
+id: 36
+seek: 39124
+start: 391.24
+end: 399.24
+text:  But we also see that we have a measurement value for it. And we have to extract that. And we build the relationship that says this is the value of the examination.
+tokens: [50365, 583, 321, 611, 536, 300, 321, 362, 257, 13160, 2158, 337, 309, 13, 400, 321, 362, 281, 8947, 300, 13, 400, 321, 1322, 264, 2480, 300, 1619, 341, 307, 264, 2158, 295, 264, 23874, 13, 50765]
+temperature: 0.0
+avg_logprob: -0.1226902259023566
+compression_ratio: 1.8228346456692914
+no_speech_prob: 3.0922339341876715e-12
+---------------------------------------------------------------------------------- 
+id: 37
+seek: 39124
+start: 399.24
+end: 405.24
+text:  We also see things that we also look at, things that are negated. So there's no weight loss.
+tokens: [50765, 492, 611, 536, 721, 300, 321, 611, 574, 412, 11, 721, 300, 366, 2485, 770, 13, 407, 456, 311, 572, 3364, 4470, 13, 51065]
+temperature: 0.0
+avg_logprob: -0.1226902259023566
+compression_ratio: 1.8228346456692914
+no_speech_prob: 3.0922339341876715e-12
+---------------------------------------------------------------------------------- 
+id: 38
+seek: 39124
+start: 405.24
+end: 413.24
+text:  Even though the API will extract that as a symptom, we notice that in the text, there's no weight loss. We negate that.
+tokens: [51065, 2754, 1673, 264, 9362, 486, 8947, 300, 382, 257, 29370, 11, 321, 3449, 300, 294, 264, 2487, 11, 456, 311, 572, 3364, 4470, 13, 492, 2485, 473, 300, 13, 51465]
+temperature: 0.0
+avg_logprob: -0.1226902259023566
+compression_ratio: 1.8228346456692914
+no_speech_prob: 3.0922339341876715e-12
+---------------------------------------------------------------------------------- 
+id: 39
+seek: 39124
+start: 413.24
+end: 417.24
+text:  That is very critical for making a diagnosis when you're looking at unstructured text.
+tokens: [51465, 663, 307, 588, 4924, 337, 1455, 257, 15217, 562, 291, 434, 1237, 412, 18799, 46847, 2487, 13, 51665]
+temperature: 0.0
+avg_logprob: -0.1226902259023566
+compression_ratio: 1.8228346456692914
+no_speech_prob: 3.0922339341876715e-12
+---------------------------------------------------------------------------------- 
+id: 40
+seek: 41724
+start: 417.24
+end: 424.24
+text:  So those are the four things that we do in the single API call to this endpoint.
+tokens: [50365, 407, 729, 366, 264, 1451, 721, 300, 321, 360, 294, 264, 2167, 9362, 818, 281, 341, 35795, 13, 50715]
+temperature: 0.0
+avg_logprob: -0.11817229633599939
+compression_ratio: 1.6397849462365592
+no_speech_prob: 1.9582948544011325e-12
+---------------------------------------------------------------------------------- 
+id: 41
+seek: 41724
+start: 424.24
+end: 431.24
+text:  And then entity recognition. We do linking of the entity to known concepts or vocabularies.
+tokens: [50715, 400, 550, 13977, 11150, 13, 492, 360, 25775, 295, 264, 13977, 281, 2570, 10392, 420, 2329, 455, 1040, 530, 13, 51065]
+temperature: 0.0
+avg_logprob: -0.11817229633599939
+compression_ratio: 1.6397849462365592
+no_speech_prob: 1.9582948544011325e-12
+---------------------------------------------------------------------------------- 
+id: 42
+seek: 41724
+start: 431.24
+end: 438.24
+text:  And then we also do relationship extraction between those entities and the attributes. And lastly, we do negation of those entities.
+tokens: [51065, 400, 550, 321, 611, 360, 2480, 30197, 1296, 729, 16667, 293, 264, 17212, 13, 400, 16386, 11, 321, 360, 2485, 399, 295, 729, 16667, 13, 51415]
+temperature: 0.0
+avg_logprob: -0.11817229633599939
+compression_ratio: 1.6397849462365592
+no_speech_prob: 1.9582948544011325e-12
+---------------------------------------------------------------------------------- 
+id: 43
+seek: 43824
+start: 438.24
+end: 448.24
+text:  This is so cool for me. I don't know if you know this. My first year of grad school, I took an NLP class.
+tokens: [50365, 639, 307, 370, 1627, 337, 385, 13, 286, 500, 380, 458, 498, 291, 458, 341, 13, 1222, 700, 1064, 295, 2771, 1395, 11, 286, 1890, 364, 426, 45196, 1508, 13, 50865]
+temperature: 0.0
+avg_logprob: -0.12907190506274885
+compression_ratio: 1.3103448275862069
+no_speech_prob: 1.3566092693650944e-12
+---------------------------------------------------------------------------------- 
+id: 44
+seek: 43824
+start: 448.24
+end: 454.24
+text:  And our job was to go through emails of disease outbreaks and literally classify it.
+tokens: [50865, 400, 527, 1691, 390, 281, 352, 807, 12524, 295, 4752, 39097, 293, 3736, 33872, 309, 13, 51165]
+temperature: 0.0
+avg_logprob: -0.12907190506274885
+compression_ratio: 1.3103448275862069
+no_speech_prob: 1.3566092693650944e-12
+---------------------------------------------------------------------------------- 
+id: 45
+seek: 45424
+start: 454.24
+end: 456.24
+text:  And then we also do that. I'm like, I'm looking at this here. I'm like tearing up a little bit.
+tokens: [50365, 400, 550, 321, 611, 360, 300, 13, 286, 478, 411, 11, 286, 478, 1237, 412, 341, 510, 13, 286, 478, 411, 29401, 493, 257, 707, 857, 13, 50465]
+temperature: 0.2
+avg_logprob: -0.3644895915743671
+compression_ratio: 1.5212765957446808
+no_speech_prob: 2.9277713066433453e-12
+---------------------------------------------------------------------------------- 
+id: 46
+seek: 45424
+start: 456.24
+end: 462.24
+text:  Because the way we used to do it was not this way. And this is pretty amazing.
+tokens: [50465, 1436, 264, 636, 321, 1143, 281, 360, 309, 390, 406, 341, 636, 13, 400, 341, 307, 1238, 2243, 13, 50765]
+temperature: 0.2
+avg_logprob: -0.3644895915743671
+compression_ratio: 1.5212765957446808
+no_speech_prob: 2.9277713066433453e-12
+---------------------------------------------------------------------------------- 
+id: 47
+seek: 45424
+start: 462.24
+end: 471.24
+text:  So a couple of questions about this. You mentioned that this is an API call. Do you have to use this interface?
+tokens: [50765, 407, 257, 1916, 295, 1651, 466, 341, 13, 509, 2835, 300, 341, 307, 364, 9362, 818, 13, 1144, 291, 362, 281, 764, 341, 9226, 30, 51215]
+temperature: 0.2
+avg_logprob: -0.3644895915743671
+compression_ratio: 1.5212765957446808
+no_speech_prob: 2.9277713066433453e-12
+---------------------------------------------------------------------------------- 
+id: 48
+seek: 47124
+start: 471.24
+end: 480.24
+text:  No, this is a visualization tool. Like I said, we originally announced this as a container that you can make an API call.
+tokens: [50365, 883, 11, 341, 307, 257, 25801, 2290, 13, 1743, 286, 848, 11, 321, 7993, 7548, 341, 382, 257, 10129, 300, 291, 393, 652, 364, 9362, 818, 13, 50815]
+temperature: 0.0
+avg_logprob: -0.11105572287716083
+compression_ratio: 1.572192513368984
+no_speech_prob: 3.2788982032988523e-12
+---------------------------------------------------------------------------------- 
+id: 49
+seek: 47124
+start: 480.24
+end: 489.24
+text:  The container would then be, you can download the container and deploy to any of your environments, whether it's on Azure or where it's local to your corporate environment.
+tokens: [50815, 440, 10129, 576, 550, 312, 11, 291, 393, 5484, 264, 10129, 293, 7274, 281, 604, 295, 428, 12388, 11, 1968, 309, 311, 322, 11969, 420, 689, 309, 311, 2654, 281, 428, 10896, 2823, 13, 51265]
+temperature: 0.0
+avg_logprob: -0.11105572287716083
+compression_ratio: 1.572192513368984
+no_speech_prob: 3.2788982032988523e-12
+---------------------------------------------------------------------------------- 
+id: 50
+seek: 48924
+start: 489.24
+end: 500.24
+text:  We realized that there was some challenge for some customers. So in a few weeks, in fact, in about 10 days, we'll be announcing the release of a hosted API.
+tokens: [50365, 492, 5334, 300, 456, 390, 512, 3430, 337, 512, 4581, 13, 407, 294, 257, 1326, 3259, 11, 294, 1186, 11, 294, 466, 1266, 1708, 11, 321, 603, 312, 28706, 264, 4374, 295, 257, 19204, 9362, 13, 50915]
+temperature: 0.0
+avg_logprob: -0.18599818150202432
+compression_ratio: 1.5377777777777777
+no_speech_prob: 2.5942813435680945e-12
+---------------------------------------------------------------------------------- 
+id: 51
+seek: 48924
+start: 500.24
+end: 506.24
+text:  And I will switch now to the Postman to show you how the APIs can make a call.
+tokens: [50915, 400, 286, 486, 3679, 586, 281, 264, 10223, 1601, 281, 855, 291, 577, 264, 21445, 393, 652, 257, 818, 13, 51215]
+temperature: 0.0
+avg_logprob: -0.18599818150202432
+compression_ratio: 1.5377777777777777
+no_speech_prob: 2.5942813435680945e-12
+---------------------------------------------------------------------------------- 
+id: 52
+seek: 48924
+start: 506.24
+end: 508.24
+text:  Let's do it.
+tokens: [51215, 961, 311, 360, 309, 13, 51315]
+temperature: 0.0
+avg_logprob: -0.18599818150202432
+compression_ratio: 1.5377777777777777
+no_speech_prob: 2.5942813435680945e-12
+---------------------------------------------------------------------------------- 
+id: 53
+seek: 48924
+start: 508.24
+end: 516.24
+text:  So here is a Postman setup. And this is making a call. Again, this is in local to my environment.
+tokens: [51315, 407, 510, 307, 257, 10223, 1601, 8657, 13, 400, 341, 307, 1455, 257, 818, 13, 3764, 11, 341, 307, 294, 2654, 281, 452, 2823, 13, 51715]
+temperature: 0.0
+avg_logprob: -0.18599818150202432
+compression_ratio: 1.5377777777777777
+no_speech_prob: 2.5942813435680945e-12
+---------------------------------------------------------------------------------- 
+id: 54
+seek: 51624
+start: 516.24
+end: 523.24
+text:  Notice that the container is not HTTPS, but we can make this call to the similar kind of text.
+tokens: [50365, 13428, 300, 264, 10129, 307, 406, 11751, 51, 6273, 11, 457, 321, 393, 652, 341, 818, 281, 264, 2531, 733, 295, 2487, 13, 50715]
+temperature: 0.0
+avg_logprob: -0.09723175696606906
+compression_ratio: 1.7215189873417722
+no_speech_prob: 2.3716605936086044e-12
+---------------------------------------------------------------------------------- 
+id: 55
+seek: 51624
+start: 523.24
+end: 530.24
+text:  So in the body of your request, you can put up to, I believe, in the container up to a thousand documents.
+tokens: [50715, 407, 294, 264, 1772, 295, 428, 5308, 11, 291, 393, 829, 493, 281, 11, 286, 1697, 11, 294, 264, 10129, 493, 281, 257, 4714, 8512, 13, 51065]
+temperature: 0.0
+avg_logprob: -0.09723175696606906
+compression_ratio: 1.7215189873417722
+no_speech_prob: 2.3716605936086044e-12
+---------------------------------------------------------------------------------- 
+id: 56
+seek: 51624
+start: 530.24
+end: 537.24
+text:  But again, even the more documents you stuff into the request body, it's going to take a while to process.
+tokens: [51065, 583, 797, 11, 754, 264, 544, 8512, 291, 1507, 666, 264, 5308, 1772, 11, 309, 311, 516, 281, 747, 257, 1339, 281, 1399, 13, 51415]
+temperature: 0.0
+avg_logprob: -0.09723175696606906
+compression_ratio: 1.7215189873417722
+no_speech_prob: 2.3716605936086044e-12
+---------------------------------------------------------------------------------- 
+id: 57
+seek: 51624
+start: 537.24
+end: 545.24
+text:  But I'll take the same request body here to demonstrate the call, and I'll send it to my container,
+tokens: [51415, 583, 286, 603, 747, 264, 912, 5308, 1772, 510, 281, 11698, 264, 818, 11, 293, 286, 603, 2845, 309, 281, 452, 10129, 11, 51815]
+temperature: 0.0
+avg_logprob: -0.09723175696606906
+compression_ratio: 1.7215189873417722
+no_speech_prob: 2.3716605936086044e-12
+---------------------------------------------------------------------------------- 
+id: 58
+seek: 54524
+start: 545.24
+end: 549.24
+text:  which is in the office somewhere, and it's going to take a while. So this is a synchronous call.
+tokens: [50365, 597, 307, 294, 264, 3398, 4079, 11, 293, 309, 311, 516, 281, 747, 257, 1339, 13, 407, 341, 307, 257, 44743, 818, 13, 50565]
+temperature: 0.0
+avg_logprob: -0.11152193718349811
+compression_ratio: 1.704035874439462
+no_speech_prob: 2.5938756351151504e-12
+---------------------------------------------------------------------------------- 
+id: 59
+seek: 54524
+start: 549.24
+end: 554.24
+text:  So once you've made the request, you're going to wait for it to finish in order for you to get the result.
+tokens: [50565, 407, 1564, 291, 600, 1027, 264, 5308, 11, 291, 434, 516, 281, 1699, 337, 309, 281, 2413, 294, 1668, 337, 291, 281, 483, 264, 1874, 13, 50815]
+temperature: 0.0
+avg_logprob: -0.11152193718349811
+compression_ratio: 1.704035874439462
+no_speech_prob: 2.5938756351151504e-12
+---------------------------------------------------------------------------------- 
+id: 60
+seek: 54524
+start: 554.24
+end: 561.24
+text:  What we will be releasing in 10 days is an asynchronous API.
+tokens: [50815, 708, 321, 486, 312, 16327, 294, 1266, 1708, 307, 364, 49174, 9362, 13, 51165]
+temperature: 0.0
+avg_logprob: -0.11152193718349811
+compression_ratio: 1.704035874439462
+no_speech_prob: 2.5938756351151504e-12
+---------------------------------------------------------------------------------- 
+id: 61
+seek: 54524
+start: 561.24
+end: 568.24
+text:  And that will allow you to send the request and forget it, and then come back and query the results of the request.
+tokens: [51165, 400, 300, 486, 2089, 291, 281, 2845, 264, 5308, 293, 2870, 309, 11, 293, 550, 808, 646, 293, 14581, 264, 3542, 295, 264, 5308, 13, 51515]
+temperature: 0.0
+avg_logprob: -0.11152193718349811
+compression_ratio: 1.704035874439462
+no_speech_prob: 2.5938756351151504e-12
+---------------------------------------------------------------------------------- 
+id: 62
+seek: 56824
+start: 568.24
+end: 575.24
+text:  So this right now, what you're seeing in Postman is the request to the container, which is synchronous.
+tokens: [50365, 407, 341, 558, 586, 11, 437, 291, 434, 2577, 294, 10223, 1601, 307, 264, 5308, 281, 264, 10129, 11, 597, 307, 44743, 13, 50715]
+temperature: 0.0
+avg_logprob: -0.16591745399567018
+compression_ratio: 1.6047619047619048
+no_speech_prob: 2.5440832166628846e-12
+---------------------------------------------------------------------------------- 
+id: 63
+seek: 56824
+start: 575.24
+end: 582.24
+text:  Again, you'll see that it will return all this output related for each entity that's detected.
+tokens: [50715, 3764, 11, 291, 603, 536, 300, 309, 486, 2736, 439, 341, 5598, 4077, 337, 1184, 13977, 300, 311, 21896, 13, 51065]
+temperature: 0.0
+avg_logprob: -0.16591745399567018
+compression_ratio: 1.6047619047619048
+no_speech_prob: 2.5440832166628846e-12
+---------------------------------------------------------------------------------- 
+id: 64
+seek: 56824
+start: 582.24
+end: 585.24
+text:  The text is the entity. All right, this is the symptom.
+tokens: [51065, 440, 2487, 307, 264, 13977, 13, 1057, 558, 11, 341, 307, 264, 29370, 13, 51215]
+temperature: 0.0
+avg_logprob: -0.16591745399567018
+compression_ratio: 1.6047619047619048
+no_speech_prob: 2.5440832166628846e-12
+---------------------------------------------------------------------------------- 
+id: 65
+seek: 56824
+start: 585.24
+end: 590.24
+text:  And it shows you the different entities, different concepts that are linked to it.
+tokens: [51215, 400, 309, 3110, 291, 264, 819, 16667, 11, 819, 10392, 300, 366, 9408, 281, 309, 13, 51465]
+temperature: 0.0
+avg_logprob: -0.16591745399567018
+compression_ratio: 1.6047619047619048
+no_speech_prob: 2.5440832166628846e-12
+---------------------------------------------------------------------------------- 
+id: 66
+seek: 59024
+start: 590.24
+end: 594.24
+text:  And then it also has a Boolean for negation.
+tokens: [50365, 400, 550, 309, 611, 575, 257, 23351, 28499, 337, 2485, 399, 13, 50565]
+temperature: 0.0
+avg_logprob: -0.11515154390253572
+compression_ratio: 1.6872427983539096
+no_speech_prob: 2.6341526616208144e-12
+---------------------------------------------------------------------------------- 
+id: 67
+seek: 59024
+start: 594.24
+end: 596.24
+text:  It's negated. If it's not, it's false.
+tokens: [50565, 467, 311, 2485, 770, 13, 759, 309, 311, 406, 11, 309, 311, 7908, 13, 50665]
+temperature: 0.0
+avg_logprob: -0.11515154390253572
+compression_ratio: 1.6872427983539096
+no_speech_prob: 2.6341526616208144e-12
+---------------------------------------------------------------------------------- 
+id: 68
+seek: 59024
+start: 596.24
+end: 599.24
+text:  So this is the output from the container.
+tokens: [50665, 407, 341, 307, 264, 5598, 490, 264, 10129, 13, 50815]
+temperature: 0.0
+avg_logprob: -0.11515154390253572
+compression_ratio: 1.6872427983539096
+no_speech_prob: 2.6341526616208144e-12
+---------------------------------------------------------------------------------- 
+id: 69
+seek: 59024
+start: 599.24
+end: 605.24
+text:  What I'm going to show you is the output, what we're going to be doing, or be releasing on the 19.
+tokens: [50815, 708, 286, 478, 516, 281, 855, 291, 307, 264, 5598, 11, 437, 321, 434, 516, 281, 312, 884, 11, 420, 312, 16327, 322, 264, 1294, 13, 51115]
+temperature: 0.0
+avg_logprob: -0.11515154390253572
+compression_ratio: 1.6872427983539096
+no_speech_prob: 2.6341526616208144e-12
+---------------------------------------------------------------------------------- 
+id: 70
+seek: 59024
+start: 605.24
+end: 608.24
+text:  It is an endpoint. It's hosted.
+tokens: [51115, 467, 307, 364, 35795, 13, 467, 311, 19204, 13, 51265]
+temperature: 0.0
+avg_logprob: -0.11515154390253572
+compression_ratio: 1.6872427983539096
+no_speech_prob: 2.6341526616208144e-12
+---------------------------------------------------------------------------------- 
+id: 71
+seek: 59024
+start: 608.24
+end: 612.24
+text:  Ignore the string here because this is from the development environment.
+tokens: [51265, 24754, 418, 264, 6798, 510, 570, 341, 307, 490, 264, 3250, 2823, 13, 51465]
+temperature: 0.0
+avg_logprob: -0.11515154390253572
+compression_ratio: 1.6872427983539096
+no_speech_prob: 2.6341526616208144e-12
+---------------------------------------------------------------------------------- 
+id: 72
+seek: 59024
+start: 612.24
+end: 616.24
+text:  We're in the process of deploying the production right now. It takes a few days.
+tokens: [51465, 492, 434, 294, 264, 1399, 295, 34198, 264, 4265, 558, 586, 13, 467, 2516, 257, 1326, 1708, 13, 51665]
+temperature: 0.0
+avg_logprob: -0.11515154390253572
+compression_ratio: 1.6872427983539096
+no_speech_prob: 2.6341526616208144e-12
+---------------------------------------------------------------------------------- 
+id: 73
+seek: 61624
+start: 616.24
+end: 624.24
+text:  So I'm going to send this request of the same body or same text to this API, this hosted API.
+tokens: [50365, 407, 286, 478, 516, 281, 2845, 341, 5308, 295, 264, 912, 1772, 420, 912, 2487, 281, 341, 9362, 11, 341, 19204, 9362, 13, 50765]
+temperature: 0.0
+avg_logprob: -0.13618878807340348
+compression_ratio: 1.6264150943396227
+no_speech_prob: 2.7400761781065652e-12
+---------------------------------------------------------------------------------- 
+id: 74
+seek: 61624
+start: 624.24
+end: 633.24
+text:  Obviously, you've got to remember you've got to provision a text-anatic resource so you can get the key in order for you to authenticate to make the call.
+tokens: [50765, 7580, 11, 291, 600, 658, 281, 1604, 291, 600, 658, 281, 17225, 257, 2487, 12, 282, 2399, 7684, 370, 291, 393, 483, 264, 2141, 294, 1668, 337, 291, 281, 9214, 8700, 281, 652, 264, 818, 13, 51215]
+temperature: 0.0
+avg_logprob: -0.13618878807340348
+compression_ratio: 1.6264150943396227
+no_speech_prob: 2.7400761781065652e-12
+---------------------------------------------------------------------------------- 
+id: 75
+seek: 61624
+start: 633.24
+end: 636.24
+text:  And again, I need to make a point of this.
+tokens: [51215, 400, 797, 11, 286, 643, 281, 652, 257, 935, 295, 341, 13, 51365]
+temperature: 0.0
+avg_logprob: -0.13618878807340348
+compression_ratio: 1.6264150943396227
+no_speech_prob: 2.7400761781065652e-12
+---------------------------------------------------------------------------------- 
+id: 76
+seek: 61624
+start: 636.24
+end: 638.24
+text:  This public preview is still gated.
+tokens: [51365, 639, 1908, 14281, 307, 920, 290, 770, 13, 51465]
+temperature: 0.0
+avg_logprob: -0.13618878807340348
+compression_ratio: 1.6264150943396227
+no_speech_prob: 2.7400761781065652e-12
+---------------------------------------------------------------------------------- 
+id: 77
+seek: 61624
+start: 638.24
+end: 644.24
+text:  It means you have to apply for access because we're trying to understand what are customers' use cases.
+tokens: [51465, 467, 1355, 291, 362, 281, 3079, 337, 2105, 570, 321, 434, 1382, 281, 1223, 437, 366, 4581, 6, 764, 3331, 13, 51765]
+temperature: 0.0
+avg_logprob: -0.13618878807340348
+compression_ratio: 1.6264150943396227
+no_speech_prob: 2.7400761781065652e-12
+---------------------------------------------------------------------------------- 
+id: 78
+seek: 64424
+start: 644.24
+end: 654.24
+text:  And so when you apply for access, we can evaluate the use cases that you're going to use for and work with you to improve the service that you are interested in.
+tokens: [50365, 400, 370, 562, 291, 3079, 337, 2105, 11, 321, 393, 13059, 264, 764, 3331, 300, 291, 434, 516, 281, 764, 337, 293, 589, 365, 291, 281, 3470, 264, 2643, 300, 291, 366, 3102, 294, 13, 50865]
+temperature: 0.0
+avg_logprob: -0.08704241885933825
+compression_ratio: 1.6108597285067874
+no_speech_prob: 2.6766111028975192e-12
+---------------------------------------------------------------------------------- 
+id: 79
+seek: 64424
+start: 654.24
+end: 660.24
+text:  So going back to this asynchronous API, this is the same request body that we sent you.
+tokens: [50865, 407, 516, 646, 281, 341, 49174, 9362, 11, 341, 307, 264, 912, 5308, 1772, 300, 321, 2279, 291, 13, 51165]
+temperature: 0.0
+avg_logprob: -0.08704241885933825
+compression_ratio: 1.6108597285067874
+no_speech_prob: 2.6766111028975192e-12
+---------------------------------------------------------------------------------- 
+id: 80
+seek: 64424
+start: 660.24
+end: 661.24
+text:  We're going to make the call.
+tokens: [51165, 492, 434, 516, 281, 652, 264, 818, 13, 51215]
+temperature: 0.0
+avg_logprob: -0.08704241885933825
+compression_ratio: 1.6108597285067874
+no_speech_prob: 2.6766111028975192e-12
+---------------------------------------------------------------------------------- 
+id: 81
+seek: 64424
+start: 661.24
+end: 664.24
+text:  And you can see that it will come back pretty quickly.
+tokens: [51215, 400, 291, 393, 536, 300, 309, 486, 808, 646, 1238, 2661, 13, 51365]
+temperature: 0.0
+avg_logprob: -0.08704241885933825
+compression_ratio: 1.6108597285067874
+no_speech_prob: 2.6766111028975192e-12
+---------------------------------------------------------------------------------- 
+id: 82
+seek: 64424
+start: 664.24
+end: 665.24
+text:  Right now, it's back.
+tokens: [51365, 1779, 586, 11, 309, 311, 646, 13, 51415]
+temperature: 0.0
+avg_logprob: -0.08704241885933825
+compression_ratio: 1.6108597285067874
+no_speech_prob: 2.6766111028975192e-12
+---------------------------------------------------------------------------------- 
+id: 83
+seek: 66524
+start: 665.24
+end: 666.24
+text:  It's back.
+tokens: [50365, 467, 311, 646, 13, 50415]
+temperature: 0.0
+avg_logprob: -0.11181756533109224
+compression_ratio: 1.4963503649635037
+no_speech_prob: 2.7713677706875384e-12
+---------------------------------------------------------------------------------- 
+id: 84
+seek: 66524
+start: 666.24
+end: 670.24
+text:  But what you don't see is that in the headers, it will be a job ID.
+tokens: [50415, 583, 437, 291, 500, 380, 536, 307, 300, 294, 264, 45101, 11, 309, 486, 312, 257, 1691, 7348, 13, 50615]
+temperature: 0.0
+avg_logprob: -0.11181756533109224
+compression_ratio: 1.4963503649635037
+no_speech_prob: 2.7713677706875384e-12
+---------------------------------------------------------------------------------- 
+id: 85
+seek: 66524
+start: 670.24
+end: 677.24
+text:  And that job ID basically is what you need to make a call to make a get call.
+tokens: [50615, 400, 300, 1691, 7348, 1936, 307, 437, 291, 643, 281, 652, 257, 818, 281, 652, 257, 483, 818, 13, 50965]
+temperature: 0.0
+avg_logprob: -0.11181756533109224
+compression_ratio: 1.4963503649635037
+no_speech_prob: 2.7713677706875384e-12
+---------------------------------------------------------------------------------- 
+id: 86
+seek: 66524
+start: 677.24
+end: 680.24
+text:  And so what we did to submit this job is a post.
+tokens: [50965, 400, 370, 437, 321, 630, 281, 10315, 341, 1691, 307, 257, 2183, 13, 51115]
+temperature: 0.0
+avg_logprob: -0.11181756533109224
+compression_ratio: 1.4963503649635037
+no_speech_prob: 2.7713677706875384e-12
+---------------------------------------------------------------------------------- 
+id: 87
+seek: 68024
+start: 680.24
+end: 696.24
+text:  So we do this, the get call and just paste, just extract, programmatically pull out the job ID, insert it at the end of the original API URL, and make the same call, a get call, sorry, not post.
+tokens: [50365, 407, 321, 360, 341, 11, 264, 483, 818, 293, 445, 9163, 11, 445, 8947, 11, 37648, 5030, 2235, 484, 264, 1691, 7348, 11, 8969, 309, 412, 264, 917, 295, 264, 3380, 9362, 12905, 11, 293, 652, 264, 912, 818, 11, 257, 483, 818, 11, 2597, 11, 406, 2183, 13, 51165]
+temperature: 0.0
+avg_logprob: -0.24872040298749815
+compression_ratio: 1.3566433566433567
+no_speech_prob: 2.8163239969292153e-12
+---------------------------------------------------------------------------------- 
+id: 88
+seek: 69624
+start: 696.24
+end: 699.24
+text:  And then you will see the output.
+tokens: [50365, 400, 550, 291, 486, 536, 264, 5598, 13, 50515]
+temperature: 0.0
+avg_logprob: -0.19292701993669784
+compression_ratio: 1.5408805031446542
+no_speech_prob: 2.838109088021401e-12
+---------------------------------------------------------------------------------- 
+id: 89
+seek: 69624
+start: 699.24
+end: 701.24
+text:  It's going to take a while to format it.
+tokens: [50515, 467, 311, 516, 281, 747, 257, 1339, 281, 7877, 309, 13, 50615]
+temperature: 0.0
+avg_logprob: -0.19292701993669784
+compression_ratio: 1.5408805031446542
+no_speech_prob: 2.838109088021401e-12
+---------------------------------------------------------------------------------- 
+id: 90
+seek: 69624
+start: 701.24
+end: 703.24
+text:  Oh, there we go.
+tokens: [50615, 876, 11, 456, 321, 352, 13, 50715]
+temperature: 0.0
+avg_logprob: -0.19292701993669784
+compression_ratio: 1.5408805031446542
+no_speech_prob: 2.838109088021401e-12
+---------------------------------------------------------------------------------- 
+id: 91
+seek: 69624
+start: 703.24
+end: 711.24
+text:  You'll see that it will show you the date that was created and when the date the job was completed.
+tokens: [50715, 509, 603, 536, 300, 309, 486, 855, 291, 264, 4002, 300, 390, 2942, 293, 562, 264, 4002, 264, 1691, 390, 7365, 13, 51115]
+temperature: 0.0
+avg_logprob: -0.19292701993669784
+compression_ratio: 1.5408805031446542
+no_speech_prob: 2.838109088021401e-12
+---------------------------------------------------------------------------------- 
+id: 92
+seek: 69624
+start: 711.24
+end: 714.24
+text:  More importantly, you see a status that it succeeded.
+tokens: [51115, 5048, 8906, 11, 291, 536, 257, 6558, 300, 309, 20263, 13, 51265]
+temperature: 0.0
+avg_logprob: -0.19292701993669784
+compression_ratio: 1.5408805031446542
+no_speech_prob: 2.838109088021401e-12
+---------------------------------------------------------------------------------- 
+id: 93
+seek: 71424
+start: 714.24
+end: 726.24
+text:  So it allows you to be asynchronous while making the call, the request, and not have to worry about it, especially if you have a lot of documents and you don't want to be sitting there waiting for the synchronous response.
+tokens: [50365, 407, 309, 4045, 291, 281, 312, 49174, 1339, 1455, 264, 818, 11, 264, 5308, 11, 293, 406, 362, 281, 3292, 466, 309, 11, 2318, 498, 291, 362, 257, 688, 295, 8512, 293, 291, 500, 380, 528, 281, 312, 3798, 456, 3806, 337, 264, 44743, 4134, 13, 50965]
+temperature: 0.0
+avg_logprob: -0.1547245506767754
+compression_ratio: 1.7536764705882353
+no_speech_prob: 2.6149080730591967e-12
+---------------------------------------------------------------------------------- 
+id: 94
+seek: 71424
+start: 726.24
+end: 730.24
+text:  And you can just forget about it and query and look for the status.
+tokens: [50965, 400, 291, 393, 445, 2870, 466, 309, 293, 14581, 293, 574, 337, 264, 6558, 13, 51165]
+temperature: 0.0
+avg_logprob: -0.1547245506767754
+compression_ratio: 1.7536764705882353
+no_speech_prob: 2.6149080730591967e-12
+---------------------------------------------------------------------------------- 
+id: 95
+seek: 71424
+start: 730.24
+end: 734.24
+text:  The status will be still if it goes from started.
+tokens: [51165, 440, 6558, 486, 312, 920, 498, 309, 1709, 490, 1409, 13, 51365]
+temperature: 0.0
+avg_logprob: -0.1547245506767754
+compression_ratio: 1.7536764705882353
+no_speech_prob: 2.6149080730591967e-12
+---------------------------------------------------------------------------------- 
+id: 96
+seek: 71424
+start: 734.24
+end: 736.24
+text:  I think I believe is processing.
+tokens: [51365, 286, 519, 286, 1697, 307, 9007, 13, 51465]
+temperature: 0.0
+avg_logprob: -0.1547245506767754
+compression_ratio: 1.7536764705882353
+no_speech_prob: 2.6149080730591967e-12
+---------------------------------------------------------------------------------- 
+id: 97
+seek: 71424
+start: 736.24
+end: 743.24
+text:  And sometimes if it fails, it will fail because you might exceed the number of characters per document.
+tokens: [51465, 400, 2171, 498, 309, 18199, 11, 309, 486, 3061, 570, 291, 1062, 14048, 264, 1230, 295, 4342, 680, 4166, 13, 51815]
+temperature: 0.0
+avg_logprob: -0.1547245506767754
+compression_ratio: 1.7536764705882353
+no_speech_prob: 2.6149080730591967e-12
+---------------------------------------------------------------------------------- 
+id: 98
+seek: 74324
+start: 743.24
+end: 744.24
+text:  You can go up to a thousand.
+tokens: [50365, 509, 393, 352, 493, 281, 257, 4714, 13, 50415]
+temperature: 0.0
+avg_logprob: -0.1358022513212981
+compression_ratio: 1.632183908045977
+no_speech_prob: 2.1257060781737502e-12
+---------------------------------------------------------------------------------- 
+id: 99
+seek: 74324
+start: 744.24
+end: 748.24
+text:  We're looking at optimizing that for a hosted endpoint.
+tokens: [50415, 492, 434, 1237, 412, 40425, 300, 337, 257, 19204, 35795, 13, 50615]
+temperature: 0.0
+avg_logprob: -0.1358022513212981
+compression_ratio: 1.632183908045977
+no_speech_prob: 2.1257060781737502e-12
+---------------------------------------------------------------------------------- 
+id: 100
+seek: 74324
+start: 748.24
+end: 750.24
+text:  Then you will come back and say it succeeded.
+tokens: [50615, 1396, 291, 486, 808, 646, 293, 584, 309, 20263, 13, 50715]
+temperature: 0.0
+avg_logprob: -0.1358022513212981
+compression_ratio: 1.632183908045977
+no_speech_prob: 2.1257060781737502e-12
+---------------------------------------------------------------------------------- 
+id: 101
+seek: 74324
+start: 750.24
+end: 755.24
+text:  Once it succeeded, you will have the output that's shown here in the same output that we saw in the container.
+tokens: [50715, 3443, 309, 20263, 11, 291, 486, 362, 264, 5598, 300, 311, 4898, 510, 294, 264, 912, 5598, 300, 321, 1866, 294, 264, 10129, 13, 50965]
+temperature: 0.0
+avg_logprob: -0.1358022513212981
+compression_ratio: 1.632183908045977
+no_speech_prob: 2.1257060781737502e-12
+---------------------------------------------------------------------------------- 
+id: 102
+seek: 74324
+start: 755.24
+end: 758.24
+text:  This is all very, very cool.
+tokens: [50965, 639, 307, 439, 588, 11, 588, 1627, 13, 51115]
+temperature: 0.0
+avg_logprob: -0.1358022513212981
+compression_ratio: 1.632183908045977
+no_speech_prob: 2.1257060781737502e-12
+---------------------------------------------------------------------------------- 
+id: 103
+seek: 74324
+start: 758.24
+end: 763.24
+text:  So question, I know with health related stuff, there is this question of privacy.
+tokens: [51115, 407, 1168, 11, 286, 458, 365, 1585, 4077, 1507, 11, 456, 307, 341, 1168, 295, 11427, 13, 51365]
+temperature: 0.0
+avg_logprob: -0.1358022513212981
+compression_ratio: 1.632183908045977
+no_speech_prob: 2.1257060781737502e-12
+---------------------------------------------------------------------------------- 
+id: 104
+seek: 74324
+start: 763.24
+end: 768.24
+text:  Can you talk about the way that this service protects customers' privacy?
+tokens: [51365, 1664, 291, 751, 466, 264, 636, 300, 341, 2643, 22583, 4581, 6, 11427, 30, 51615]
+temperature: 0.0
+avg_logprob: -0.1358022513212981
+compression_ratio: 1.632183908045977
+no_speech_prob: 2.1257060781737502e-12
+---------------------------------------------------------------------------------- 
+id: 105
+seek: 76824
+start: 768.24
+end: 773.24
+text:  So first off, the request for the hosted API.
+tokens: [50365, 407, 700, 766, 11, 264, 5308, 337, 264, 19204, 9362, 13, 50615]
+temperature: 0.0
+avg_logprob: -0.12169767462688943
+compression_ratio: 1.5811965811965811
+no_speech_prob: 3.490903096106668e-12
+---------------------------------------------------------------------------------- 
+id: 106
+seek: 76824
+start: 773.24
+end: 776.24
+text:  So the whole container is within your own environment.
+tokens: [50615, 407, 264, 1379, 10129, 307, 1951, 428, 1065, 2823, 13, 50765]
+temperature: 0.0
+avg_logprob: -0.12169767462688943
+compression_ratio: 1.5811965811965811
+no_speech_prob: 3.490903096106668e-12
+---------------------------------------------------------------------------------- 
+id: 107
+seek: 76824
+start: 776.24
+end: 780.24
+text:  You have control over how you protect your data.
+tokens: [50765, 509, 362, 1969, 670, 577, 291, 2371, 428, 1412, 13, 50965]
+temperature: 0.0
+avg_logprob: -0.12169767462688943
+compression_ratio: 1.5811965811965811
+no_speech_prob: 3.490903096106668e-12
+---------------------------------------------------------------------------------- 
+id: 108
+seek: 76824
+start: 780.24
+end: 783.24
+text:  For the hosted API, we are a data processor.
+tokens: [50965, 1171, 264, 19204, 9362, 11, 321, 366, 257, 1412, 15321, 13, 51115]
+temperature: 0.0
+avg_logprob: -0.12169767462688943
+compression_ratio: 1.5811965811965811
+no_speech_prob: 3.490903096106668e-12
+---------------------------------------------------------------------------------- 
+id: 109
+seek: 76824
+start: 783.24
+end: 787.24
+text:  So we don't persist any of your information you sent to us.
+tokens: [51115, 407, 321, 500, 380, 13233, 604, 295, 428, 1589, 291, 2279, 281, 505, 13, 51315]
+temperature: 0.0
+avg_logprob: -0.12169767462688943
+compression_ratio: 1.5811965811965811
+no_speech_prob: 3.490903096106668e-12
+---------------------------------------------------------------------------------- 
+id: 110
+seek: 76824
+start: 787.24
+end: 793.24
+text:  And because it's under Azure, you have all the benefits of Azure infrastructure with security, privacy, compliance.
+tokens: [51315, 400, 570, 309, 311, 833, 11969, 11, 291, 362, 439, 264, 5311, 295, 11969, 6896, 365, 3825, 11, 11427, 11, 15882, 13, 51615]
+temperature: 0.0
+avg_logprob: -0.12169767462688943
+compression_ratio: 1.5811965811965811
+no_speech_prob: 3.490903096106668e-12
+---------------------------------------------------------------------------------- 
+id: 111
+seek: 79324
+start: 793.24
+end: 798.24
+text:  We are a HIPAA compliance, especially when we're talking about healthcare.
+tokens: [50365, 492, 366, 257, 389, 9139, 5265, 15882, 11, 2318, 562, 321, 434, 1417, 466, 8884, 13, 50615]
+temperature: 0.0
+avg_logprob: -0.14946942389765872
+compression_ratio: 1.5024630541871922
+no_speech_prob: 3.615189094266502e-12
+---------------------------------------------------------------------------------- 
+id: 112
+seek: 79324
+start: 798.24
+end: 803.24
+text:  So the information you sent to us, we would not persist them.
+tokens: [50615, 407, 264, 1589, 291, 2279, 281, 505, 11, 321, 576, 406, 13233, 552, 13, 50865]
+temperature: 0.0
+avg_logprob: -0.14946942389765872
+compression_ratio: 1.5024630541871922
+no_speech_prob: 3.615189094266502e-12
+---------------------------------------------------------------------------------- 
+id: 113
+seek: 79324
+start: 803.24
+end: 806.24
+text:  What our telemetry will collect is just a number of documents.
+tokens: [50865, 708, 527, 4304, 5537, 627, 486, 2500, 307, 445, 257, 1230, 295, 8512, 13, 51015]
+temperature: 0.0
+avg_logprob: -0.14946942389765872
+compression_ratio: 1.5024630541871922
+no_speech_prob: 3.615189094266502e-12
+---------------------------------------------------------------------------------- 
+id: 114
+seek: 79324
+start: 806.24
+end: 809.24
+text:  How many characters are in those documents?
+tokens: [51015, 1012, 867, 4342, 366, 294, 729, 8512, 30, 51165]
+temperature: 0.0
+avg_logprob: -0.14946942389765872
+compression_ratio: 1.5024630541871922
+no_speech_prob: 3.615189094266502e-12
+---------------------------------------------------------------------------------- 
+id: 115
+seek: 79324
+start: 809.24
+end: 813.24
+text:  We don't persist any of the content that has been sent to us.
+tokens: [51165, 492, 500, 380, 13233, 604, 295, 264, 2701, 300, 575, 668, 2279, 281, 505, 13, 51365]
+temperature: 0.0
+avg_logprob: -0.14946942389765872
+compression_ratio: 1.5024630541871922
+no_speech_prob: 3.615189094266502e-12
+---------------------------------------------------------------------------------- 
+id: 116
+seek: 81324
+start: 813.24
+end: 819.24
+text:  And even if we, to the point where we can't help troubleshoot past a certain amount.
+tokens: [50365, 400, 754, 498, 321, 11, 281, 264, 935, 689, 321, 393, 380, 854, 15379, 24467, 1791, 257, 1629, 2372, 13, 50665]
+temperature: 0.0
+avg_logprob: -0.13421994084897249
+compression_ratio: 1.6447876447876448
+no_speech_prob: 4.534250579169008e-12
+---------------------------------------------------------------------------------- 
+id: 117
+seek: 81324
+start: 819.24
+end: 825.24
+text:  Because this, what you see in the output here for this job, there is an expiration date, right?
+tokens: [50665, 1436, 341, 11, 437, 291, 536, 294, 264, 5598, 510, 337, 341, 1691, 11, 456, 307, 364, 39657, 4002, 11, 558, 30, 50965]
+temperature: 0.0
+avg_logprob: -0.13421994084897249
+compression_ratio: 1.6447876447876448
+no_speech_prob: 4.534250579169008e-12
+---------------------------------------------------------------------------------- 
+id: 118
+seek: 81324
+start: 825.24
+end: 828.24
+text:  We do keep the results because we don't expect you to.
+tokens: [50965, 492, 360, 1066, 264, 3542, 570, 321, 500, 380, 2066, 291, 281, 13, 51115]
+temperature: 0.0
+avg_logprob: -0.13421994084897249
+compression_ratio: 1.6447876447876448
+no_speech_prob: 4.534250579169008e-12
+---------------------------------------------------------------------------------- 
+id: 119
+seek: 81324
+start: 828.24
+end: 831.24
+text:  But immediately you'll be done and you'll be pulling the results back.
+tokens: [51115, 583, 4258, 291, 603, 312, 1096, 293, 291, 603, 312, 8407, 264, 3542, 646, 13, 51265]
+temperature: 0.0
+avg_logprob: -0.13421994084897249
+compression_ratio: 1.6447876447876448
+no_speech_prob: 4.534250579169008e-12
+---------------------------------------------------------------------------------- 
+id: 120
+seek: 81324
+start: 831.24
+end: 832.24
+text:  We will give you some time.
+tokens: [51265, 492, 486, 976, 291, 512, 565, 13, 51315]
+temperature: 0.0
+avg_logprob: -0.13421994084897249
+compression_ratio: 1.6447876447876448
+no_speech_prob: 4.534250579169008e-12
+---------------------------------------------------------------------------------- 
+id: 121
+seek: 81324
+start: 832.24
+end: 836.24
+text:  And part of our policy is to persist this for 48 hours.
+tokens: [51315, 400, 644, 295, 527, 3897, 307, 281, 13233, 341, 337, 11174, 2496, 13, 51515]
+temperature: 0.0
+avg_logprob: -0.13421994084897249
+compression_ratio: 1.6447876447876448
+no_speech_prob: 4.534250579169008e-12
+---------------------------------------------------------------------------------- 
+id: 122
+seek: 81324
+start: 836.24
+end: 838.24
+text:  And after that, it will be deleted.
+tokens: [51515, 400, 934, 300, 11, 309, 486, 312, 22981, 13, 51615]
+temperature: 0.0
+avg_logprob: -0.13421994084897249
+compression_ratio: 1.6447876447876448
+no_speech_prob: 4.534250579169008e-12
+---------------------------------------------------------------------------------- 
+id: 123
+seek: 83824
+start: 838.24
+end: 844.24
+text:  So once you, if you send a job to us and you keep checking, if you don't check within 48 hours,
+tokens: [50365, 407, 1564, 291, 11, 498, 291, 2845, 257, 1691, 281, 505, 293, 291, 1066, 8568, 11, 498, 291, 500, 380, 1520, 1951, 11174, 2496, 11, 50665]
+temperature: 0.0
+avg_logprob: -0.1436717486140704
+compression_ratio: 1.6120689655172413
+no_speech_prob: 3.5876974134596562e-12
+---------------------------------------------------------------------------------- 
+id: 124
+seek: 83824
+start: 844.24
+end: 846.24
+text:  that job, the output will be completely deleted.
+tokens: [50665, 300, 1691, 11, 264, 5598, 486, 312, 2584, 22981, 13, 50765]
+temperature: 0.0
+avg_logprob: -0.1436717486140704
+compression_ratio: 1.6120689655172413
+no_speech_prob: 3.5876974134596562e-12
+---------------------------------------------------------------------------------- 
+id: 125
+seek: 83824
+start: 846.24
+end: 850.24
+text:  So that we will be in compliance with our policies for privacy.
+tokens: [50765, 407, 300, 321, 486, 312, 294, 15882, 365, 527, 7657, 337, 11427, 13, 50965]
+temperature: 0.0
+avg_logprob: -0.1436717486140704
+compression_ratio: 1.6120689655172413
+no_speech_prob: 3.5876974134596562e-12
+---------------------------------------------------------------------------------- 
+id: 126
+seek: 83824
+start: 850.24
+end: 852.24
+text:  This again is amazing.
+tokens: [50965, 639, 797, 307, 2243, 13, 51065]
+temperature: 0.0
+avg_logprob: -0.1436717486140704
+compression_ratio: 1.6120689655172413
+no_speech_prob: 3.5876974134596562e-12
+---------------------------------------------------------------------------------- 
+id: 127
+seek: 83824
+start: 852.24
+end: 855.24
+text:  Ashley, where can people go to find out more?
+tokens: [51065, 19571, 11, 689, 393, 561, 352, 281, 915, 484, 544, 30, 51215]
+temperature: 0.0
+avg_logprob: -0.1436717486140704
+compression_ratio: 1.6120689655172413
+no_speech_prob: 3.5876974134596562e-12
+---------------------------------------------------------------------------------- 
+id: 128
+seek: 83824
+start: 855.24
+end: 861.24
+text:  Yes, you can also go, you can find out more in the Azure document, Microsoft documentation site.
+tokens: [51215, 1079, 11, 291, 393, 611, 352, 11, 291, 393, 915, 484, 544, 294, 264, 11969, 4166, 11, 8116, 14333, 3621, 13, 51515]
+temperature: 0.0
+avg_logprob: -0.1436717486140704
+compression_ratio: 1.6120689655172413
+no_speech_prob: 3.5876974134596562e-12
+---------------------------------------------------------------------------------- 
+id: 129
+seek: 86124
+start: 861.24
+end: 867.24
+text:  I look for Connective Services, Text Analytics, and you'll find a section under Text Analytics for Health.
+tokens: [50365, 286, 574, 337, 11653, 488, 12124, 11, 18643, 25944, 11, 293, 291, 603, 915, 257, 3541, 833, 18643, 25944, 337, 5912, 13, 50665]
+temperature: 0.0
+avg_logprob: -0.1371289689019816
+compression_ratio: 1.8280254777070064
+no_speech_prob: 3.0928118139456062e-12
+---------------------------------------------------------------------------------- 
+id: 130
+seek: 86124
+start: 867.24
+end: 871.24
+text:  And again, this is a public preview and it's gated right now.
+tokens: [50665, 400, 797, 11, 341, 307, 257, 1908, 14281, 293, 309, 311, 290, 770, 558, 586, 13, 50865]
+temperature: 0.0
+avg_logprob: -0.1371289689019816
+compression_ratio: 1.8280254777070064
+no_speech_prob: 3.0928118139456062e-12
+---------------------------------------------------------------------------------- 
+id: 131
+seek: 86124
+start: 871.24
+end: 875.24
+text:  But there is a link in there to go to apply for access.
+tokens: [50865, 583, 456, 307, 257, 2113, 294, 456, 281, 352, 281, 3079, 337, 2105, 13, 51065]
+temperature: 0.0
+avg_logprob: -0.1371289689019816
+compression_ratio: 1.8280254777070064
+no_speech_prob: 3.0928118139456062e-12
+---------------------------------------------------------------------------------- 
+id: 132
+seek: 86124
+start: 875.24
+end: 879.24
+text:  If not, I can give the information to Seth and he will share it.
+tokens: [51065, 759, 406, 11, 286, 393, 976, 264, 1589, 281, 25353, 293, 415, 486, 2073, 309, 13, 51265]
+temperature: 0.0
+avg_logprob: -0.1371289689019816
+compression_ratio: 1.8280254777070064
+no_speech_prob: 3.0928118139456062e-12
+---------------------------------------------------------------------------------- 
+id: 133
+seek: 86124
+start: 879.24
+end: 880.24
+text:  That's right, we'll put it below.
+tokens: [51265, 663, 311, 558, 11, 321, 603, 829, 309, 2507, 13, 51315]
+temperature: 0.0
+avg_logprob: -0.1371289689019816
+compression_ratio: 1.8280254777070064
+no_speech_prob: 3.0928118139456062e-12
+---------------------------------------------------------------------------------- 
+id: 134
+seek: 86124
+start: 880.24
+end: 882.24
+text:  Well, Ashley, thank you so much for spending some time with us.
+tokens: [51315, 1042, 11, 19571, 11, 1309, 291, 370, 709, 337, 6434, 512, 565, 365, 505, 13, 51415]
+temperature: 0.0
+avg_logprob: -0.1371289689019816
+compression_ratio: 1.8280254777070064
+no_speech_prob: 3.0928118139456062e-12
+---------------------------------------------------------------------------------- 
+id: 135
+seek: 86124
+start: 882.24
+end: 884.24
+text:  And thank you so much for watching.
+tokens: [51415, 400, 1309, 291, 370, 709, 337, 1976, 13, 51515]
+temperature: 0.0
+avg_logprob: -0.1371289689019816
+compression_ratio: 1.8280254777070064
+no_speech_prob: 3.0928118139456062e-12
+---------------------------------------------------------------------------------- 
+id: 136
+seek: 86124
+start: 884.24
+end: 887.24
+text:  We've been learning all about Text Analytics specifically for Health.
+tokens: [51515, 492, 600, 668, 2539, 439, 466, 18643, 25944, 4682, 337, 5912, 13, 51665]
+temperature: 0.0
+avg_logprob: -0.1371289689019816
+compression_ratio: 1.8280254777070064
+no_speech_prob: 3.0928118139456062e-12
+---------------------------------------------------------------------------------- 
+id: 137
+seek: 86124
+start: 887.24
+end: 889.24
+text:  Thank you so much for watching and hopefully we'll see you next time. Take care.
+tokens: [51665, 1044, 291, 370, 709, 337, 1976, 293, 4696, 321, 603, 536, 291, 958, 565, 13, 3664, 1127, 13, 51765]
+temperature: 0.0
+avg_logprob: -0.1371289689019816
+compression_ratio: 1.8280254777070064
+no_speech_prob: 3.0928118139456062e-12
+---------------------------------------------------------------------------------- 
+id: 138
+seek: 88924
+start: 889.24
+end: 891.24
+text:  We'll see you next time. Take care.
+tokens: [50365, 492, 603, 536, 291, 958, 565, 13, 3664, 1127, 13, 50465]
+temperature: 0.0
+avg_logprob: -0.3055900243612436
+compression_ratio: 0.813953488372093
+no_speech_prob: 1.3872879624579615e-12
+---------------------------------------------------------------------------------- 
