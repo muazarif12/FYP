@@ -3,7 +3,7 @@ from downloader import download_video
 from transcriber import get_youtube_transcript, transcribe_video
 from summarizer import generate_response_async, get_welcome_message, generate_key_moments_with_titles, generate_enhanced_response
 from highlights import extract_highlights, generate_highlights, generate_custom_highlights, merge_clips
-from retrieval import retrieve_chunks
+from retrieval import initialize_indexes, retrieve_chunks
 from utils import format_timestamp
 import asyncio
 import time
@@ -31,6 +31,12 @@ async def chatbot():
     if not transcript_segments:
         print("No YouTube transcript found. Transcribing video using Whisper...")
         transcript_segments, full_timestamped_transcript, detected_language = await transcribe_video(downloaded_file)
+
+    # ADD THIS CODE HERE:
+    print("Pre-computing search indexes...")
+    full_text = " ".join([seg[2] for seg in transcript_segments])
+    await initialize_indexes(full_text)
+    print("Search indexes ready.")
 
     # Store video info for highlights
     video_info = {

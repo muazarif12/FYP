@@ -2,10 +2,30 @@ import re
 import time
 import ollama
 from utils import format_timestamp
+import asyncio
+import hashlib
+import functools
 
-# Function to generate response using Ollama's chat functionality with improved prompting
+
+# Response cache to store previously generated responses
+_response_cache = {}
+_cache_size_limit = 100  # Limit cache size to prevent memory issues
+
+# Function to generate response using Ollama's chat functionality with improved prompting and caching
 async def generate_response_async(prompt_text, language_code="en"):
-    model = "deepseek-r1:7b"  # Use any model you prefer (e.g., deepseek-r1:7b, phi3, etc.)
+    """
+    Generate a response with caching to improve performance for repeated prompts.
+    """
+    # Create a cache key from the prompt and language
+    cache_key = hashlib.md5(f"{prompt_text}:{language_code}".encode()).hexdigest()
+    
+    # Check if response is in cache
+    if cache_key in _response_cache:
+        print("Using cached response (saved LLM call)")
+        return _response_cache[cache_key]
+    
+    model = "deepseek-r1:7b"  # Use any model you prefer
+    
     try:
         # Add language instruction to the prompt
         language_instruction = ""
@@ -16,24 +36,52 @@ async def generate_response_async(prompt_text, language_code="en"):
 
         start_time = time.time()  # Start time for query
 
-        # Change to synchronous handling since 'ollama.chat' is not async
-        response = ollama.chat(model=model, messages=[{"role": "user", "content": enhanced_prompt}])
+        # Run Ollama in a thread pool to prevent blocking
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            None,
+            functools.partial(
+                ollama.chat,
+                model=model,
+                messages=[{"role": "user", "content": enhanced_prompt}]
+            )
+        )
 
         end_time = time.time()  # End time for query
-        print(f"Time taken for query: {end_time - start_time:.4f} seconds")
-        return response['message']['content']  # Return the full response after printing in chunks
+        print(f"Time taken for LLM query: {end_time - start_time:.4f} seconds")
+        
+        result = response['message']['content']
+        
+        # Cache the response
+        if len(_response_cache) >= _cache_size_limit:
+            # Remove oldest entry if cache is full
+            oldest_key = next(iter(_response_cache))
+            del _response_cache[oldest_key]
+        
+        _response_cache[cache_key] = result
+        
+        return result
+        
     except Exception as e:
         print(f"Error: {e}")
         return "An error occurred while generating the response."
-    
 
-# Get welcome message based on detected language
+# Get welcome message based on detected language with caching
+_welcome_message_cache = {}
+
 async def get_welcome_message(language_code):
+    """Get welcome message with caching to improve performance."""
+    if language_code in _welcome_message_cache:
+        return _welcome_message_cache[language_code]
+        
     if language_code == "en":
-        return "Welcome to VidSense! I've analyzed the video and I'm ready to answer your questions. You can ask me to summarize the video, explain key topics, provide timestamps, generate highlights, or answer specific questions about the content. Type 'quit' to end the conversation."
+        message = "Welcome to VidSense! I've analyzed the video and I'm ready to answer your questions. You can ask me to summarize the video, explain key topics, provide timestamps, generate highlights, or answer specific questions about the content. Type 'quit' to end the conversation."
     else:
         prompt = f"Please translate the following message to {language_code} language: 'Welcome to VidSense! I've analyzed the video and I'm ready to answer your questions. You can ask me to summarize the video, explain key topics, provide timestamps, generate highlights, or answer specific questions about the content. Type 'quit' to end the conversation.'"
-        return await generate_response_async(prompt)
+        message = await generate_response_async(prompt)
+    
+    _welcome_message_cache[language_code] = message
+    return message
     
 
 async def generate_key_moments_with_titles(transcript_segments, full_timestamped_transcript, language_code="en"):
@@ -226,8 +274,26 @@ def format_key_moments(key_moments_structured, language_code="en"):
     return "\n".join(formatted_lines)
 
 
-# Enhanced response generation for various query types
+# Enhanced response generation with caching
+_enhanced_response_cache = {}
+
 async def generate_enhanced_response(query_type, retrieval_data, user_input, detected_language="en"):
+    """
+    Generate enhanced responses with caching for repeated or similar queries.
+    """
+    # Create simplified retrieval data for caching (avoid caching exact retrieval text)
+    # This allows caching even when retrieval data is slightly different 
+    simplified_data = hashlib.md5(retrieval_data.encode()).hexdigest()
+    
+    # Create cache key that captures the essence of the query
+    cache_key = f"{query_type}:{simplified_data[:10]}:{hashlib.md5(user_input.encode()).hexdigest()}:{detected_language}"
+    
+    # Check if we have a cached response
+    if cache_key in _enhanced_response_cache:
+        print("Using cached enhanced response")
+        return _enhanced_response_cache[cache_key]
+    
+    # If not cached, proceed to generate
     if query_type == "summary":
         prompt = f"""
         You are VidSense, an intelligent video summarizer. Create a clear, concise summary of this video based on the retrieved information.
@@ -295,4 +361,15 @@ async def generate_enhanced_response(query_type, retrieval_data, user_input, det
         If the question relates to a specific moment or section of the video, mention the approximate timestamp or section where this information appears.
         """
 
-    return await generate_response_async(prompt, detected_language)
+    # Generate response
+    response = await generate_response_async(prompt, detected_language)
+    
+    # Cache the response
+    if len(_enhanced_response_cache) >= _cache_size_limit:
+        # Remove an arbitrary entry if cache is full
+        oldest_key = next(iter(_enhanced_response_cache))
+        del _enhanced_response_cache[oldest_key]
+    
+    _enhanced_response_cache[cache_key] = response
+    
+    return response

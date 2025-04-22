@@ -1,51 +1,139 @@
 import asyncio
 import re
 import time
+import numpy as np
 from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import Chroma
+from langchain.vectorstores import FAISS
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import Document
 from rank_bm25 import BM25Okapi
+import functools
+import concurrent.futures
 
-# Retrieve relevant info from transcript using hybrid RAG with async improvements
-async def retrieve_chunks(text, query, k=3):
-    start_time = time.time()  # Start time for retrieval process
+# Cache for embedding model to avoid reloading
+_embedding_model = None
+
+def get_embedding_model():
+    """Singleton pattern to reuse the embedding model"""
+    global _embedding_model
+    if _embedding_model is None:
+        # Use device="cuda" only if you have CUDA available, otherwise use "cpu"
+        _embedding_model = HuggingFaceEmbeddings(
+            model_name="all-MiniLM-L6-v2", 
+            model_kwargs={"device": "cuda"},
+            encode_kwargs={"batch_size": 32, "normalize_embeddings": True}  # Batch processing for speed
+        )
+    return _embedding_model
+
+# Precomputed FAISS index (to be initialized on first call)
+_faiss_index = None
+_index_texts = None
+_index_metadata = None
+
+async def precompute_faiss_index(text):
+    """Precompute and cache the FAISS index for faster subsequent retrievals"""
+    global _faiss_index, _index_texts, _index_metadata
+    
+    if _faiss_index is not None:
+        return _faiss_index, _index_texts, _index_metadata
+    
+    # Preprocess text
     text = text.replace('\r', '').replace('\xa0', ' ')
     text = re.sub(r'\n{2,}', '\n\n', text.strip())
     docs = [Document(page_content=text)]
-    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+    
+    # Use larger chunk size with smaller overlap for efficiency
+    splitter = RecursiveCharacterTextSplitter(chunk_size=800, chunk_overlap=50)
     chunks = splitter.split_documents(docs)
-    texts = [chunk.page_content for chunk in chunks]
-    metadata = [chunk.metadata for chunk in chunks]
+    _index_texts = [chunk.page_content for chunk in chunks]
+    _index_metadata = [chunk.metadata for chunk in chunks]
+    
+    # Get embedding model
+    embedding_model = get_embedding_model()
+    
+    # Create FAISS index
+    _faiss_index = await asyncio.to_thread(
+        FAISS.from_texts, 
+        _index_texts, 
+        embedding_model, 
+        _index_metadata
+    )
+    
+    return _faiss_index, _index_texts, _index_metadata
 
-    embedding_model = HuggingFaceEmbeddings(model_name="all-MiniLM-L6-v2", model_kwargs={"device": "cuda"})
-    vectordb = Chroma.from_texts(texts, embedding_model, metadatas=metadata, persist_directory="chroma_db")
-
-    # Using BM25 and embedding models in parallel
-    tokenized_texts = [t.split() for t in texts]
-    bm25 = BM25Okapi(tokenized_texts)
-
-    # Perform the retrievals in parallel
-    async def get_results():
-        results_embedding = await asyncio.to_thread(vectordb.similarity_search_with_score, query, k)  # Use thread for DB search
-        results_bm25 = [(i, bm25.get_scores(query.split())[i]) for i in range(len(texts))]
+async def retrieve_chunks(text, query, k=3):
+    """Enhanced retrieval using FAISS and optimized for performance"""
+    start_time = time.time()
+    
+    # Get or create FAISS index
+    faiss_index, texts, metadata = await precompute_faiss_index(text)
+    
+    # Create BM25 index if not already cached with the index
+    if not hasattr(faiss_index, '_bm25_index'):
+        tokenized_texts = [t.split() for t in texts]
+        faiss_index._bm25_index = BM25Okapi(tokenized_texts)
+    
+    bm25 = faiss_index._bm25_index
+    
+    # Run embedding and BM25 searches in parallel
+    async def run_parallel_searches():
+        # Define synchronous functions for thread pool
+        def faiss_search():
+            return faiss_index.similarity_search_with_score(query, k=k)
+        
+        def bm25_search():
+            scores = bm25.get_scores(query.split())
+            indices = np.argsort(scores)[-k:][::-1]  # Get top k indices
+            return [(i, scores[i]) for i in indices]
+        
+        # Execute in thread pool
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            # Submit tasks
+            faiss_future = executor.submit(faiss_search)
+            bm25_future = executor.submit(bm25_search)
+            
+            # Get results
+            results_embedding = faiss_future.result()
+            results_bm25_raw = bm25_future.result()
+        
+        # Convert BM25 results to documents
+        results_bm25 = [(Document(page_content=texts[i], metadata=metadata[i] if i < len(metadata) else {}), score) 
+                       for i, score in results_bm25_raw]
+        
         return results_embedding, results_bm25
-
-    results_embedding, results_bm25 = await get_results()
-
-    results_bm25 = sorted(results_bm25, key=lambda x: x[1], reverse=True)[:k]
-    results_bm25_docs = [(Document(page_content=texts[i], metadata=metadata[i]), score) for i, score in results_bm25]
-
-    doc_lookup = {doc.page_content: doc for doc, _ in results_bm25_docs + results_embedding}
-
-    def rrf(bm25_res, emb_res):
+    
+    # Get search results
+    results_embedding, results_bm25 = await run_parallel_searches()
+    
+    # Create lookup table for documents
+    doc_lookup = {doc.page_content: doc for doc, _ in results_bm25 + results_embedding}
+    
+    # Reciprocal Rank Fusion for better results
+    def rrf(bm25_res, emb_res, k1=60):
+        """Improved RRF with k parameter to control influence"""
         scores = {}
-        for r, (doc, _) in enumerate(bm25_res + emb_res):
-            scores[doc.page_content] = scores.get(doc.page_content, 0) + 1 / (r + 1)
+        # Process BM25 results
+        for r, (doc, _) in enumerate(bm25_res):
+            scores[doc.page_content] = scores.get(doc.page_content, 0) + 1 / (r + k1)
+        
+        # Process embedding results
+        for r, (doc, _) in enumerate(emb_res):
+            scores[doc.page_content] = scores.get(doc.page_content, 0) + 1 / (r + k1)
+            
         return sorted(scores.items(), key=lambda x: x[1], reverse=True)
-
-    fused = rrf(results_bm25_docs, results_embedding)
-    end_time = time.time()  # End time for retrieval process
+    
+    # Apply fusion ranking
+    fused = rrf(results_bm25, results_embedding)
+    
+    end_time = time.time()
     print(f"Time taken for retrieval: {end_time - start_time:.4f} seconds")
-
+    
+    # Return top k documents
     return [doc_lookup[doc_id] for doc_id, _ in fused[:k]]
+
+# Function to initialize indexes in the background (call at application startup)
+async def initialize_indexes(text):
+    """Initialize indexes in background to speed up first query"""
+    print("Pre-computing embedding indexes...")
+    await precompute_faiss_index(text)
+    print("Embedding indexes ready.")
