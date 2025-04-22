@@ -97,7 +97,7 @@ async def generate_podcast_script(transcript_segments, video_info, detected_lang
     - Description: "{(video_info.get('description') or '')[:300]}..."
 
     PODCAST REQUIREMENTS:
-    1. Create a 5-7 minute podcast script (approximately 800-1000 words) in conversation format.
+    1. Create a 7-10 minute podcast script (approximately 800-1000 words) in conversation format.
     2. The hosts should have distinct personalities:
        - {host1_name}: {host1_personality}
        - {host2_name}: {host2_personality}
