@@ -1,0 +1,103 @@
+\documentclass{bscs}
+
+\usepackage[utf8]{inputenc}
+\usepackage{hyperref}
+
+\title{Feasibility and Prototyping Report for VidSense}
+\author {Muhammad Bilal Taha 25132 (Group Lead)\\
+         [Muhammad Muaz Arif]\\
+         [Muhammad Wasay]\\
+         [Syed Bilal Ali]\\
+         [Ali Iqbal]}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{acknowledgement}
+We would like to express our sincere gratitude to our project advisors, Dr. Muhammad Saeed
+and Umair Nazir, for their invaluable guidance and support throughout the development of this
+report. We also extend our appreciation to our university and department for providing the
+necessary resources and opportunities to pursue this project.
+\end{acknowledgement}
+
+\tableofcontents
+\newpage
+
+% Feasibility Report Content
+\section{Feasibility Report for VidSense}
+\subsection{Introduction}
+VidSense is an intelligent video summarization tool designed to address the growing need for efficient video consumption. This report assesses the project's feasibility by identifying ethical and technical risks, as well as evaluating potential binding constraints.
+
+\subsection{Ethical Risks}
+\begin{itemize}
+     
+    \item \textbf{Cultural Sensitivity:} Sentiment analysis models may misinterpret culturally specific nuances in Arabic and English, potentially leading to inaccurate results.
+    \item \textbf{Bias in Summarization:} NLP models might prioritize specific types of content, risking an incomplete or unfair representation of video highlights.
+\end{itemize}
+
+\subsection{Technical Pre-Mortem}
+\textbf{Potential Failure Points:}
+\begin{itemize}
+\item Inaccurate transcription: The open source transcription tools may not transcribe the words in the video's audio. 
+
+    \item Multilingual NLP Issues: Inaccurate handling of linguistic nuances in Arabic and English captions.
+    \item Sentiment Analysis Challenges: Mislabeling emotional content due to limited training data or model inaccuracies.
+\end{itemize}
+
+\textbf{Mitigation Strategies:}
+\begin{itemize}
+    \item Implement fallback mechanisms, such as manual caption input options.
+    \item Use pre-trained, domain-specific NLP models for better accuracy.
+    \item Continuously test and improve sentiment analysis models to minimize errors.
+\end{itemize}
+
+\subsection{Binding Constraints}
+\begin{itemize}
+    \item \textbf{Language Processing Accuracy:} Multilingual NLP must deliver consistent results across both languages.
+    \item \textbf{Scalability:} The system must efficiently handle videos up to 30 minutes long without delays.
+    \item \textbf{User Interface Usability:} A simple and intuitive design must cater to users of varying technical expertise.
+\end{itemize}
+
+\subsection{Conclusion}
+VidSense is a promising solution to the challenges of video consumption. By addressing ethical and technical risks and ensuring that binding constraints are met, the project is feasible with careful implementation and monitoring.
+
+% Prototyping Report Content
+\section{Prototyping Report for VidSense}
+\subsection{Introduction}
+The VidSense prototype aims to validate the tool's effectiveness in summarizing videos, providing sentiment-enriched highlights, and supporting multilingual accessibility. This report evaluates the prototype's alignment with project goals and identifies areas for improvement.
+
+\subsection{Prototype Evaluation}
+\textbf{Delivering Envisioned Benefits:}
+\begin{itemize}
+    \item VidSense effectively summarizes videos, saving users time and increasing accessibility.
+    \item Multilingual support caters to Arabic-speaking audiences, filling a critical accessibility gap.
+    \item Sentiment-enriched summaries enhance user engagement by highlighting emotional content.
+\end{itemize}
+
+\subsection{Inclusivity Challenges}
+\textbf{Identified Issues:}
+\begin{itemize}
+    \item Non-technical users may struggle with the current interface design.
+    
+    \item Sentiment inaccuracies may arise for culturally specific content.
+\end{itemize}
+
+\textbf{Fixes Implemented:}
+\begin{itemize}
+    \item Simplified UI elements with tutorials or on-screen prompts.
+    \item Fine-tuned NLP models with additional training data for better cultural adaptability.
+\end{itemize}
+
+\subsection{Prototype Enhancements}
+\begin{itemize}
+    \item Added functionality to allow clickable highlights directly in the video summary page.
+    \item Introduced a language selection dropdown for seamless multilingual support.
+    \item Planned future improvements include expanding language options beyond Arabic and English and improving processing speeds for large video files.
+\end{itemize}
+
+\subsection{Conclusion}
+The VidSense prototype demonstrates significant progress toward delivering the project's intended outcomes. Ongoing refinements will ensure broader inclusivity and functionality, bringing the tool closer to its envisioned potential.
+
+\end{document}
