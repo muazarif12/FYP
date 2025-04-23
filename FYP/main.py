@@ -1,7 +1,7 @@
 import re
 from downloader import download_video
 from transcriber import get_youtube_transcript, transcribe_video
-from summarizer import generate_response_async, get_welcome_message, generate_key_moments_with_titles, generate_enhanced_response
+from summarizer import generate_key_moments_algorithmically, generate_response_async, get_welcome_message, generate_key_moments_with_titles, generate_enhanced_response
 from highlights import extract_highlights, generate_highlights, generate_custom_highlights, merge_clips
 from retrieval import initialize_indexes, retrieve_chunks
 from utils import format_timestamp
@@ -253,11 +253,16 @@ Try saying "podcast" to generate a discussion about this video!
             # Generate key moments only when requested (lazy loading)
             if key_moments_data is None:
                 print("Analyzing key moments in the video...")
-                key_moments_structured, key_moments_formatted = await generate_key_moments_with_titles(
+                # key_moments_structured, key_moments_formatted = await generate_key_moments_with_titles(
+                #     transcript_segments, 
+                #     full_timestamped_transcript, 
+                #     detected_language
+                # )
+                key_moments_structured, key_moments_formatted = await generate_key_moments_algorithmically(
                     transcript_segments, 
-                    full_timestamped_transcript, 
-                    detected_language
-                )
+                    full_timestamped_transcript
+                )    
+
                 key_moments_data = {
                     'structured': key_moments_structured,
                     'formatted': key_moments_formatted
