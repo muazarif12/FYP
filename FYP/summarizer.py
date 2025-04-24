@@ -388,7 +388,7 @@ async def generate_key_moments_algorithmically(transcript_segments, full_timesta
     try:
         # Segment the video into approximately 5-7 key moments (plus intro)
         total_segments = len(texts)
-        num_key_moments = min(7, max(5, total_segments // 50 + 3))
+        num_key_moments = min(10, max(5, total_segments // 50 + 3))
         
         # Create evenly spaced key moments
         segment_indices = [int((i+1) * total_segments / (num_key_moments+1)) for i in range(num_key_moments)]

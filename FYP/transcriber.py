@@ -90,6 +90,13 @@ async def get_youtube_transcript(video_id):
 async def transcribe_video(video_path):
     print("Using device for Whisper:", device)
     start_time = time.time()  # Start time for transcription
+    
+    # Check if the file exists
+    if not os.path.exists(video_path):
+        print(f"Error: Video file not found at {video_path}")
+        return None, None, None
+
+    print(f"Transcribing video from {video_path}...")
 
     # Automatically detect language and transcribe with parallelism
     result = await asyncio.to_thread(model.transcribe, video_path, language=None, word_timestamps=True)  # Use threading for heavy operations

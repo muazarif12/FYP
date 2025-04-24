@@ -7,7 +7,101 @@ from retrieval import initialize_indexes, retrieve_chunks
 from utils import format_timestamp
 import asyncio
 import time
+from meeting_minutes import generate_meeting_minutes, save_meeting_minutes, format_minutes_for_display
 
+
+def validate_video_file(file_path):
+    """
+    Validate that the provided path points to a valid video file.
+    
+    Args:
+        file_path: Path to the file to validate
+        
+    Returns:
+        tuple: (is_valid, message) where is_valid is a boolean and message is an error message or None
+    """
+    import os
+    import mimetypes
+    
+    # Check if the file exists
+    if not os.path.exists(file_path):
+        return False, f"File not found: {file_path}"
+    
+    # Check if it's a file (not a directory)
+    if not os.path.isfile(file_path):
+        return False, f"Not a file: {file_path}"
+    
+    # Check file size (limit to 2GB for example)
+    max_size = 2 * 1024 * 1024 * 1024  # 2GB in bytes
+    file_size = os.path.getsize(file_path)
+    if file_size > max_size:
+        return False, f"File too large: {file_size/1024/1024:.1f}MB (max {max_size/1024/1024:.1f}MB)"
+    
+    # Check file extension
+    valid_extensions = ['.mp4', '.avi', '.mov', '.mkv', '.webm', '.wmv', '.flv', '.3gp']
+    _, ext = os.path.splitext(file_path)
+    if ext.lower() not in valid_extensions:
+        return False, f"Unsupported file format: {ext}. Supported formats: {', '.join(valid_extensions)}"
+    
+    # Try to get the mime type (optional, as mimetypes might not be accurate for all video formats)
+    try:
+        mime_type, _ = mimetypes.guess_type(file_path)
+        if mime_type and not mime_type.startswith('video/'):
+            return False, f"Not a video file. Detected type: {mime_type}"
+    except:
+        # If mime type check fails, just continue with extension validation
+        pass
+        
+    return True, None
+
+async def handle_file_upload(file_path):
+    """
+    Process a locally uploaded video file.
+    
+    Args:
+        file_path: Path to the uploaded video file
+        
+    Returns:
+        Tuple containing (downloaded_file, video_title, video_description, video_id)
+    """
+    # Copy or move the file to the output directory
+    from constants import OUTPUT_DIR
+    import os
+    import shutil
+    
+    # Validate the video file
+    is_valid, error_message = validate_video_file(file_path)
+    if not is_valid:
+        print(f"Error: {error_message}")
+        return None, None, None, None
+    
+    # Generate a unique filename to avoid conflicts
+    filename = os.path.basename(file_path)
+    base_name, ext = os.path.splitext(filename)
+    
+    # Use the existing file extension or default to .mp4
+    if not ext:
+        ext = ".mp4"
+    
+    # Create a destination path in the OUTPUT_DIR
+    output_file = os.path.join(OUTPUT_DIR, f"uploaded_video{ext}")
+    
+    try:
+        # Copy the file to the output directory
+        print(f"Copying file to processing directory...")
+        shutil.copy2(file_path, output_file)
+        print(f"File copied successfully.")
+    except Exception as e:
+        print(f"Error copying file: {e}")
+        return None, None, None, None
+    
+    # For uploaded files, we don't have video_id, but we need to return similar structure
+    # as download_video function for compatibility
+    video_title = f"Uploaded Video - {base_name}"
+    video_description = "User uploaded video file"
+    video_id = None
+    
+    return output_file, video_title, video_description, video_id
 
 async def chatbot():
     start_time = time.time()  # Start time for the entire process
@@ -24,6 +118,7 @@ VidSense helps you extract insights from videos with these features:
   • "summarize" → Get a concise summary of the video
   • "key moments" → See main chapters/sections with timestamps
   • "key topics" → Extract main ideas and concepts
+  • "meeting minutes" → Generate structured meeting notes (great for recorded meetings)
 
 🎬 CONTENT CREATION:
   • "highlights" → Generate video highlights
@@ -40,13 +135,74 @@ VidSense helps you extract insights from videos with these features:
 Type "help" anytime to see this list again.
 """)
     
-    video_url = input("Please provide the video link: ")
-
-    # Run video download
-    print("\nDownloading and analyzing the video...")
-    downloaded_file, video_title, video_description, video_id = await download_video(video_url)
+    # Add option for video input method
+    print("\nHow would you like to provide your video?")
+    print("1. Upload a video file from your device")
+    print("2. Paste a YouTube video link")
+    
+    # Input validation loop for user choice
+    while True:
+        choice = input("Enter your choice (1 or 2): ")
+        if choice in ["1", "2"]:
+            break
+        print("Invalid choice. Please enter 1 for file upload or 2 for YouTube link.")
+    
+    downloaded_file = None
+    video_title = None
+    video_description = None
+    video_id = None
+    
+    if choice == "1":
+        # Handle file upload with retry logic
+        max_attempts = 3
+        for attempt in range(max_attempts):
+            file_path = input("Please enter the full path to your video file: ")
+            
+            # Allow user to go back to the choice selection
+            if file_path.lower() in ["back", "return", "cancel"]:
+                print("Returning to input selection...")
+                return await chatbot()  # Restart the chatbot
+                
+            print("\nProcessing your uploaded video file...")
+            downloaded_file, video_title, video_description, video_id = await handle_file_upload(file_path)
+            
+            if downloaded_file:
+                break
+            
+            if attempt < max_attempts - 1:
+                print(f"Failed to process the video. You have {max_attempts - attempt - 1} more attempts.")
+                print("Type 'back' to return to input selection.")
+            else:
+                print("Maximum attempts reached.")
+    else:
+        # Handle YouTube link (existing functionality) with retry logic
+        max_attempts = 3
+        for attempt in range(max_attempts):
+            video_url = input("Please provide the YouTube video link: ")
+            
+            # Allow user to go back to the choice selection
+            if video_url.lower() in ["back", "return", "cancel"]:
+                print("Returning to input selection...")
+                return await chatbot()  # Restart the chatbot
+                
+            # Basic validation for YouTube URL
+            if "youtube.com" not in video_url and "youtu.be" not in video_url:
+                print("Warning: This doesn't appear to be a YouTube link. Continuing anyway...")
+            
+            print("\nDownloading and analyzing the video...")
+            downloaded_file, video_title, video_description, video_id = await download_video(video_url)
+            
+            if downloaded_file:
+                break
+            
+            if attempt < max_attempts - 1:
+                print(f"Failed to download the video. You have {max_attempts - attempt - 1} more attempts.")
+                print("Type 'back' to return to input selection.")
+            else:
+                print("Maximum attempts reached.")
+    
     if not downloaded_file:
-        print("Failed to download the video. Exiting.")
+        print("Failed to process the video. Exiting.")
         return
 
     # Try to get YouTube transcript first
@@ -86,9 +242,10 @@ Available Features:
 ✓ Highlights - Create a shorter version with the best parts
 ✓ Podcast - Generate a conversation between hosts discussing the video
 ✓ Reels - Create short-form content for social media
+✓ Meeting Minutes - Generate professional notes from meetings
 ✓ Custom Questions - Ask anything about the video content
 
-Try saying "podcast" to generate a discussion about this video!
+Try saying "meeting minutes" to generate notes for a meeting recording!
 """
     else:
         # Translate feature overview to detected language
@@ -101,9 +258,10 @@ Available Features:
 ✓ Highlights - Create a shorter version with the best parts
 ✓ Podcast - Generate a conversation between hosts discussing the video
 ✓ Reels - Create short-form content for social media
+✓ Meeting Minutes - Generate professional notes from meetings
 ✓ Custom Questions - Ask anything about the video content
 
-Try saying "podcast" to generate a discussion about this video!
+Try saying "meeting minutes" to generate notes for a meeting recording!
 """
         feature_overview = await generate_response_async(translation_prompt)
     
@@ -116,6 +274,9 @@ Try saying "podcast" to generate a discussion about this video!
     podcast_generated = False
     podcast_data = None
     podcast_path = None
+    meeting_minutes_generated = False
+    meeting_minutes_data = None
+    meeting_minutes_path = None
 
     while True:
         user_input = input("\nYou: ")
@@ -158,6 +319,9 @@ Try saying "podcast" to generate a discussion about this video!
                     custom_podcast_prompt = f"Follow a {podcast_format} format."
             
             query_type = "podcast"
+
+        elif re.search(r'meeting minutes|minutes|meeting notes|meeting summary', user_input.lower()):
+            query_type = "meeting_minutes"
         
         # First check for highlight-related requests since they can overlap with other patterns
         elif re.search(r'highlight|best parts|important parts|generate', user_input.lower()):
@@ -247,6 +411,38 @@ Try saying "podcast" to generate a discussion about this video!
                             print("... (script continues)")
                 else:
                     print("Sorry, I couldn't generate a podcast for this video. Please try again.")
+
+        # In main.py, modify the meeting minutes generation part
+        elif query_type == "meeting_minutes":
+            print("Generating meeting minutes based on the video content. This may take a few minutes...")
+            
+            # Generate meeting minutes with timestamped transcript
+            minutes_data = await generate_meeting_minutes(
+                transcript_segments, 
+                video_info, 
+                detected_language,
+                timestamped_transcript=full_timestamped_transcript  # Pass the timestamped transcript
+            )
+            
+            if minutes_data:
+                # Save meeting minutes to a file
+                minutes_path = await save_meeting_minutes(minutes_data, format="md")
+                
+                if minutes_path:
+                    print("\nMeeting minutes generated successfully!")
+                    print(f"Saved to: {minutes_path}")
+                    
+                    # Display a summary of the meeting minutes
+                    formatted_minutes = format_minutes_for_display(minutes_data)
+                    print(formatted_minutes)
+                    
+                    # Print help info about the file
+                    print("\nThe complete meeting minutes have been saved to the file above.")
+                    print("You can open this file to view all details including action items and decisions.")
+                else:
+                    print("Generated meeting minutes but failed to save to file.")
+            else:
+                print("Sorry, I couldn't generate meeting minutes for this video. Please try again.")
 
         # Handle key moments/timeline requests
         elif query_type == "key_moments":
@@ -396,14 +592,14 @@ Try saying "podcast" to generate a discussion about this video!
     end_time = time.time()  # End time for entire process
     print(f"\nTotal time taken for the entire process: {end_time - start_time:.4f} seconds")
 
-
-# Helper function to show available commands
+# Update the show_help_message function to include meeting minutes
 async def show_help_message(detected_language="en"):
     if detected_language == "en":
         help_message = """
 VidSense Commands:
 - "summarize" or "summary": Get a summary of the video content
 - "key moments" or "timeline": See the main chapters/sections of the video
+- "meeting minutes": Generate structured meeting notes and action items
 - "highlights": Generate video highlights
 - "highlights X minutes": Generate X minutes of highlights
 - "podcast": Generate a conversation-style podcast about the video content
@@ -419,6 +615,7 @@ Please translate the following help message to {} language:
 VidSense Commands:
 - "summarize" or "summary": Get a summary of the video content
 - "key moments" or "timeline": See the main chapters/sections of the video
+- "meeting minutes": Generate structured meeting notes and action items
 - "highlights": Generate video highlights
 - "highlights X minutes": Generate X minutes of highlights
 - "podcast": Generate a conversation-style podcast about the video content
