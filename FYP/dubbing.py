@@ -148,14 +148,17 @@ async def translate_transcript_with_ollama(transcript_segments, detected_languag
 
 # Update the generate_dubbed_audio function in dubbing.py
 
-async def generate_dubbed_audio(translated_segments, output_dir, video_duration):
+# Update the generate_dubbed_audio function to use only one voice per gender
+
+async def generate_dubbed_audio(translated_segments, output_dir, video_duration, gender_predictions=None):
     """
-    Generate English audio for each translated segment.
+    Generate English audio for each translated segment with one consistent voice per gender.
     
     Args:
         translated_segments: List of tuples (start_time, end_time, translated_text)
         output_dir: Directory to save audio files
         video_duration: Duration of the video in seconds
+        gender_predictions: Dictionary mapping segment indices to predicted gender
         
     Returns:
         Path to the directory containing audio segments
@@ -170,14 +173,31 @@ async def generate_dubbed_audio(translated_segments, output_dir, video_duration)
         temp_dir = os.path.join(output_dir, "dubbing", "temp_audio")
         os.makedirs(temp_dir, exist_ok=True)
         
-        logger.info(f"Generating English audio for {len(translated_segments)} segments...")
+        # Set up one voice per gender - use the most reliable voices
+        male_voice = "en-US-GuyNeural"    # Single consistent male voice
+        female_voice = "en-US-JennyNeural" # Single consistent female voice
+        
+        # Default to alternating genders if no gender predictions
+        if not gender_predictions:
+            logger.info("No gender predictions provided. Using consistent male/female voices based on segment index.")
+            gender_predictions = {i: 'male' if i % 2 == 0 else 'female' for i in range(len(translated_segments))}
+        
+        logger.info(f"Generating English audio for {len(translated_segments)} segments with consistent gender voices...")
+        logger.info(f"Using '{male_voice}' for all male segments and '{female_voice}' for all female segments")
         
         # Track the progress
         total_segments = len(translated_segments)
         audio_segment_paths = []
         
-        # Skip Edge TTS that's causing issues and use gTTS directly
-        from gtts import gTTS
+        # Try using Edge TTS if available, with fallback to gTTS
+        try:
+            import edge_tts
+            edge_tts_available = True
+            logger.info("Using Edge TTS for gender-appropriate voices")
+        except ImportError:
+            edge_tts_available = False
+            logger.info("Edge TTS not available - falling back to gTTS (without gender distinction)")
+            from gtts import gTTS
         
         # Generate audio for each segment
         for i, (start, end, text) in enumerate(translated_segments):
@@ -193,9 +213,27 @@ async def generate_dubbed_audio(translated_segments, output_dir, video_duration)
                 if i % 10 == 0:  # Log progress every 10 segments
                     logger.info(f"Generating audio segment {i+1}/{total_segments}")
                 
-                # Use gTTS directly instead of Edge TTS
-                tts = gTTS(text=text, lang='en', slow=False)
-                tts.save(segment_path)
+                # Determine gender for this segment
+                gender = gender_predictions.get(i, 'male')  # Default to male if not specified
+                
+                # Select voice based on gender - only one voice per gender
+                selected_voice = male_voice if gender == 'male' else female_voice
+                
+                if edge_tts_available:
+                    try:
+                        # Generate with Edge TTS
+                        logger.info(f"Using {gender} voice: {selected_voice}")
+                        communicate = edge_tts.Communicate(text, selected_voice)
+                        await communicate.save(segment_path)
+                    except Exception as e:
+                        logger.error(f"Edge TTS failed: {e}. Falling back to gTTS")
+                        # Fallback to gTTS
+                        tts = gTTS(text=text, lang='en', slow=False)
+                        tts.save(segment_path)
+                else:
+                    # Use gTTS (no gender distinction)
+                    tts = gTTS(text=text, lang='en', slow=False)
+                    tts.save(segment_path)
                 
                 # Store the path along with timing information
                 if os.path.exists(segment_path) and os.path.getsize(segment_path) > 0:
@@ -203,7 +241,8 @@ async def generate_dubbed_audio(translated_segments, output_dir, video_duration)
                         "path": segment_path,
                         "start": start,
                         "end": end,
-                        "text": text
+                        "text": text,
+                        "gender": gender
                     })
                 else:
                     logger.warning(f"Segment {i} audio file is empty or not created")
@@ -220,7 +259,8 @@ async def generate_dubbed_audio(translated_segments, output_dir, video_duration)
                             "path": segment_path,
                             "start": start,
                             "end": end,
-                            "text": shortened_text
+                            "text": shortened_text,
+                            "gender": gender
                         })
                 except Exception as inner_e:
                     logger.error(f"Error with shortened text for segment {i}: {inner_e}")
@@ -232,7 +272,11 @@ async def generate_dubbed_audio(translated_segments, output_dir, video_duration)
         with open(manifest_path, 'w', encoding='utf-8') as f:
             json.dump({
                 "segments": audio_segment_paths,
-                "video_duration": video_duration
+                "video_duration": video_duration,
+                "voice_settings": {
+                    "male_voice": male_voice,
+                    "female_voice": female_voice
+                }
             }, f, indent=2)
         
         return temp_dir
@@ -436,6 +480,145 @@ async def synchronize_dubbing(video_path, audio_segments_dir, output_dir):
         logger.error(traceback.format_exc())
         return None
 
+
+# Add this function to dubbing.py to detect speaker gender
+
+async def detect_speakers_gender(transcript_segments, detected_language):
+    """
+    Analyze transcript to detect speaker gender based on language patterns.
+    
+    Args:
+        transcript_segments: List of tuples (start_time, end_time, text)
+        detected_language: The detected language code
+        
+    Returns:
+        Dictionary mapping segment indices to predicted gender ('male' or 'female')
+    """
+    import re
+    logger.info("Detecting speaker genders in transcript...")
+    
+    # Initialize with a neutral stance
+    gender_predictions = {}
+    
+    # Check for obvious speaker indicators first
+    speaker_pattern = re.compile(r'^\s*\[?([^:]+)(?:\])?:\s*(.*)', re.IGNORECASE)
+    
+    # Common male and female name indicators (add more based on your common languages)
+    male_indicators = ['male', 'man', 'gentleman', 'boy', 'sir', 'mr', 'he', 'his', 'him',
+                      'father', 'brother', 'uncle', 'king', 'prince', 'narrator']
+    female_indicators = ['female', 'woman', 'lady', 'girl', 'madam', 'ms', 'mrs', 'miss', 'she', 'her', 'hers',
+                        'mother', 'sister', 'aunt', 'queen', 'princess', 'hostess']
+    
+    # Language-specific gender patterns
+    language_patterns = {
+        'ar': {
+            'male': [r'\bهو\b', r'\bله\b', r'\bرجل\b'],  # Arabic male indicators
+            'female': [r'\bهي\b', r'\bلها\b', r'\bامرأة\b']  # Arabic female indicators
+        },
+        'es': {
+            'male': [r'\bél\b', r'\bsuyo\b', r'\bhombre\b'],  # Spanish male indicators
+            'female': [r'\bella\b', r'\bsuya\b', r'\bmujer\b']  # Spanish female indicators
+        },
+        'fr': {
+            'male': [r'\bil\b', r'\bson\b', r'\bhomme\b'],  # French male indicators
+            'female': [r'\belle\b', r'\bsa\b', r'\bfemme\b']  # French female indicators
+        }
+        # Add more languages as needed
+    }
+    
+    # Get language-specific patterns if available
+    lang_male_patterns = language_patterns.get(detected_language, {}).get('male', [])
+    lang_female_patterns = language_patterns.get(detected_language, {}).get('female', [])
+    
+    # Combine all patterns
+    all_male_patterns = lang_male_patterns + [rf'\b{indicator}\b' for indicator in male_indicators]
+    all_female_patterns = lang_female_patterns + [rf'\b{indicator}\b' for indicator in female_indicators]
+    
+    # Track speaker continuity
+    speakers = {}  # Map speaker names to genders
+    current_speaker = None
+    
+    # First pass: look for explicit speaker labels and gender indicators
+    for i, (_, _, text) in enumerate(transcript_segments):
+        # Look for speaker labels like "John: Hello" or "[John]: Hello"
+        match = speaker_pattern.match(text)
+        if match:
+            speaker_name = match.group(1).strip().lower()
+            if speaker_name not in speakers:
+                # Check if the speaker name contains gender indicators
+                speaker_gender = None
+                if any(re.search(rf'\b{name}\b', speaker_name, re.IGNORECASE) for name in male_indicators):
+                    speaker_gender = 'male'
+                elif any(re.search(rf'\b{name}\b', speaker_name, re.IGNORECASE) for name in female_indicators):
+                    speaker_gender = 'female'
+                
+                if speaker_gender:
+                    speakers[speaker_name] = speaker_gender
+            
+            # Use known speaker gender if available
+            if speaker_name in speakers:
+                gender_predictions[i] = speakers[speaker_name]
+                current_speaker = speaker_name
+            continue
+        
+        # If no speaker label, check for gender indicators in the text
+        male_score = sum(1 for pattern in all_male_patterns if re.search(pattern, text, re.IGNORECASE))
+        female_score = sum(1 for pattern in all_female_patterns if re.search(pattern, text, re.IGNORECASE))
+        
+        if male_score > female_score:
+            gender_predictions[i] = 'male'
+        elif female_score > male_score:
+            gender_predictions[i] = 'female'
+        elif current_speaker in speakers:
+            # If no clear indicators, use previous speaker's gender
+            gender_predictions[i] = speakers[current_speaker]
+    
+    # Second pass: Use clustering for segments without clear gender
+    # Fill in gaps based on surrounding segments
+    last_gender = None
+    for i in range(len(transcript_segments)):
+        if i not in gender_predictions:
+            # Look at surrounding segments
+            surrounding_male = 0
+            surrounding_female = 0
+            
+            # Check previous 3 segments
+            for j in range(max(0, i-3), i):
+                if j in gender_predictions:
+                    if gender_predictions[j] == 'male':
+                        surrounding_male += 1
+                    else:
+                        surrounding_female += 1
+            
+            # Check next 3 segments
+            for j in range(i+1, min(len(transcript_segments), i+4)):
+                if j in gender_predictions:
+                    if gender_predictions[j] == 'male':
+                        surrounding_male += 1
+                    else:
+                        surrounding_female += 1
+            
+            # Assign gender based on surroundings
+            if surrounding_male > surrounding_female:
+                gender_predictions[i] = 'male'
+            elif surrounding_female > surrounding_male:
+                gender_predictions[i] = 'female'
+            elif last_gender:
+                gender_predictions[i] = last_gender
+            else:
+                # Default if no other information
+                gender_predictions[i] = 'male'
+        
+        last_gender = gender_predictions[i]
+    
+    # Count males and females
+    male_count = sum(1 for gender in gender_predictions.values() if gender == 'male')
+    female_count = sum(1 for gender in gender_predictions.values() if gender == 'female')
+    
+    logger.info(f"Gender detection complete. Found approximately {male_count} male and {female_count} female segments.")
+    
+    return gender_predictions
+
 # Update the main dubbing function in dubbing.py
 
 async def create_english_dub(video_path, transcript_segments, detected_language, output_dir):
@@ -461,23 +644,32 @@ async def create_english_dub(video_path, transcript_segments, detected_language,
         logger.info(f"Starting English dubbing process for {detected_language} video...")
         
         # Step 1: Translate transcript to English
-        logger.info("Step 1/3: Translating transcript to English...")
+        logger.info("Step 1/4: Translating transcript to English...")
         translated_segments = await translate_transcript_to_english(transcript_segments, detected_language)
         
         if not translated_segments:
             return None, "Failed to translate transcript to English."
         
-        # Step 2: Generate English audio for each segment
-        logger.info("Step 2/3: Generating English audio...")
+        # Step 2: Detect speaker genders
+        logger.info("Step 2/4: Detecting speaker genders...")
+        gender_predictions = await detect_speakers_gender(transcript_segments, detected_language)
+        
+        # Log gender distribution
+        male_count = sum(1 for gender in gender_predictions.values() if gender == 'male')
+        female_count = sum(1 for gender in gender_predictions.values() if gender == 'female')
+        logger.info(f"Detected {male_count} male segments and {female_count} female segments")
+        
+        # Step 3: Generate English audio for each segment
+        logger.info("Step 3/4: Generating English audio with gender-appropriate voices...")
         # Get video duration from last segment end time or default to 10 minutes
         video_duration = translated_segments[-1][1] if translated_segments else 600
-        audio_dir = await generate_dubbed_audio(translated_segments, output_dir, video_duration)
+        audio_dir = await generate_dubbed_audio(translated_segments, output_dir, video_duration, gender_predictions)
         
         if not audio_dir:
             return None, "Failed to generate English audio for dubbing."
         
-        # Step 3: Synchronize audio with video
-        logger.info("Step 3/3: Synchronizing audio with video...")
+        # Step 4: Synchronize audio with video
+        logger.info("Step 4/4: Synchronizing audio with video...")
         dubbed_video = await synchronize_dubbing(video_path, audio_dir, output_dir)
         
         if not dubbed_video:
@@ -510,6 +702,8 @@ async def create_english_dub(video_path, transcript_segments, detected_language,
         stats = {
             "original_language": detected_language,
             "segments_translated": len(translated_segments),
+            "male_segments": male_count,
+            "female_segments": female_count,
             "duration": video_duration,
             "processing_time": f"{end_time - start_time:.2f} seconds",
             "file_size": f"{os.path.getsize(dubbed_video) / (1024 * 1024):.2f} MB"

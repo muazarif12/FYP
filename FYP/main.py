@@ -11,6 +11,7 @@ import asyncio
 import time
 from meeting_minutes import generate_meeting_minutes, save_meeting_minutes, format_minutes_for_display
 from dubbing import create_english_dub
+from video_qa import answer_video_question, generate_faq    
 
 
 def validate_video_file(file_path):
@@ -136,6 +137,16 @@ VidSense helps you extract insights from videos with these features:
   • Ask any question about the video content
   • "help" → Show all available commands
   • "quit" → Exit the application
+        
+💬 VIDEO Q&A:
+  • Ask any specific question about the video content
+  • "What did the speaker say about X?"
+  • "When does the video mention Y?"
+  • "Show me the part where Z happens"
+  • "faq" → Generate common questions and answers
+  • For text-only answers: "text only what did they say about X?"
+          
+
 
 Type "help" anytime to see this list again.
 """)
@@ -330,6 +341,20 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
 
         elif re.search(r'english dub|dub|dubbing|voice over|translate audio|translate voice', user_input.lower()):
             query_type = "english_dub"
+
+        # Add these pattern matches to the query_type detection section in the main loop:
+        elif re.search(r'(^|\s)faq\s|frequently asked|common questions', user_input.lower()):
+            query_type = "generate_faq"
+
+        # Add these pattern matches to identify text-only question requests
+        elif re.search(r'text[- ]only|no[- ]clip|without[- ]clip|just[- ]text|only[- ]text', user_input.lower()):
+            # If user explicitly asks for text-only answer
+            query_type = "text_only_question"
+            user_input = re.sub(r'text[- ]only|no[- ]clip|without[- ]clip|just[- ]text|only[- ]text', '', user_input).strip()
+        elif re.search(r'at what|when did|who|what|where|why|how|explain|tell me about|find|show me', user_input.lower()) and len(user_input.split()) > 3:
+            # If the input looks like a question and has more than 3 words
+            query_type = "answer_question"
+
         
         # First check for highlight-related requests since they can overlap with other patterns
         elif re.search(r'highlight|best parts|important parts|generate', user_input.lower()):
@@ -482,6 +507,112 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
             else:
                 print("Sorry, I couldn't generate meeting minutes for this video. Please try again.")
 
+        elif query_type == "generate_faq":
+            print("Generating frequently asked questions about this video...")
+            faq_list = await generate_faq(transcript_segments, video_info)
+            
+            if faq_list:
+                print("\nFrequently Asked Questions:")
+                for i, qa in enumerate(faq_list, 1):
+                    print(f"\nQ{i}: {qa.get('question', 'No question')}")
+                    print(f"A: {qa.get('answer', 'No answer')}")
+            else:
+                print("Sorry, I couldn't generate FAQ for this video.")
+
+        elif query_type == "answer_question":
+            print(f"Searching for an answer to your question in the video content...")
+            
+            # Process the question and get answer with relevant clip
+            qa_result = await answer_video_question(
+                transcript_segments, 
+                downloaded_file,
+                user_input
+            )
+            
+            if qa_result and "answer" in qa_result:
+                # Display the answer
+                print(f"\nAnswer: {qa_result['answer']}")
+                
+                # Show timestamps
+                if qa_result.get("formatted_timestamps"):
+                    print("\nRelevant video segments:")
+                    for ts in qa_result["formatted_timestamps"]:
+                        print(f"• {ts}")
+                
+                # Show clip info if available
+                if qa_result.get("clip_path") and os.path.exists(qa_result["clip_path"]):
+                    print(f"\nI've created a video clip that answers your question:")
+                    print(f"Clip: {qa_result['clip_title']}")
+                    print(f"Saved to: {qa_result['clip_path']}")
+                
+                # Show processing time
+                if qa_result.get("processing_time"):
+                    print(f"\nTime taken to answer: {qa_result['processing_time']:.2f} seconds")
+            else:
+                print("Sorry, I couldn't find a specific answer to that question in the video.")
+
+        # Add the text-only handler to the main conditional section
+        elif query_type == "text_only_question":
+            print(f"Finding an answer to your question (text only)...")
+            
+            # Process the question and get answer WITHOUT generating a clip
+            qa_result = await answer_video_question(
+                transcript_segments, 
+                downloaded_file,
+                user_input,
+                generate_clip=False  # Explicitly request no clip generation
+            )
+            
+            if qa_result and "answer" in qa_result:
+                # Display the answer
+                print(f"\nAnswer: {qa_result['answer']}")
+                
+                # Show timestamps
+                if qa_result.get("formatted_timestamps"):
+                    print("\nRelevant video segments:")
+                    for ts in qa_result["formatted_timestamps"]:
+                        print(f"• {ts}")
+                
+                # Show processing time
+                if qa_result.get("processing_time"):
+                    print(f"\nTime taken to answer: {qa_result['processing_time']:.2f} seconds")
+            else:
+                print("Sorry, I couldn't find a specific answer to that question in the video.")
+
+        # Keep the existing answer_question handler, but update to pass the generate_clip parameter
+        elif query_type == "answer_question":
+            print(f"Searching for an answer to your question in the video content...")
+            
+            # Process the question and get answer with relevant clip
+            qa_result = await answer_video_question(
+                transcript_segments, 
+                downloaded_file,
+                user_input,
+                generate_clip=True  # Explicitly request clip generation
+            )
+            
+            if qa_result and "answer" in qa_result:
+                # Display the answer
+                print(f"\nAnswer: {qa_result['answer']}")
+                
+                # Show timestamps
+                if qa_result.get("formatted_timestamps"):
+                    print("\nRelevant video segments:")
+                    for ts in qa_result["formatted_timestamps"]:
+                        print(f"• {ts}")
+                
+                # Show clip info if available
+                if qa_result.get("clip_path") and os.path.exists(qa_result["clip_path"]):
+                    print(f"\nI've created a video clip that answers your question:")
+                    print(f"Clip: {qa_result['clip_title']}")
+                    print(f"Saved to: {qa_result['clip_path']}")
+                
+                # Show processing time
+                if qa_result.get("processing_time"):
+                    print(f"\nTime taken to answer: {qa_result['processing_time']:.2f} seconds")
+            else:
+                print("Sorry, I couldn't find a specific answer to that question in the video.")
+
         # Handle key moments/timeline requests
         elif query_type == "key_moments":
             # Generate key moments only when requested (lazy loading)
@@ -630,9 +761,9 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
     end_time = time.time()  # End time for entire process
     print(f"\nTotal time taken for the entire process: {end_time - start_time:.4f} seconds")
 
-# Update the show_help_message function to include meeting minutes
-async def show_help_message(detected_language="en"):
-    if detected_language == "en":
+# Update the show_help_message function to include the text-only option
+async def show_help_message(detected_language="en", user_language_preference="en"):
+    if user_language_preference == "en":
         help_message = """
 VidSense Commands:
 - "summarize" or "summary": Get a summary of the video content
@@ -644,12 +775,15 @@ VidSense Commands:
 - "podcast [style]": Generate a podcast with a specific style (casual, educational, etc.)
 - "reel": Create a short clip for social media
 - "english dub": Create English-dubbed version of non-English videos
+- "faq": Generate frequently asked questions about the video
+- Ask specific questions like "What did they say about X?" (creates answer clip)
+- For text-only answers: Add "text only" before your question
 - "help": Show this help message
 - "quit": Exit the application
         """
     else:
-        help_prompt = """
-Please translate the following help message to {} language:
+        help_prompt = f"""
+Please translate the following help message to {user_language_preference} language:
 
 VidSense Commands:
 - "summarize" or "summary": Get a summary of the video content
@@ -661,10 +795,13 @@ VidSense Commands:
 - "podcast [style]": Generate a podcast with a specific style (casual, educational, etc.)
 - "reel": Create a short clip for social media
 - "english dub": Create English-dubbed version of non-English videos
+- "faq": Generate frequently asked questions about the video
+- Ask specific questions like "What did they say about X?" (creates answer clip)
+- For text-only answers: Add "text only" before your question
 - "help": Show this help message
 - "quit": Exit the application
-        """.format(detected_language)
-        help_message = await generate_response_async(help_prompt)
+        """
+        help_message = await generate_response_async(help_prompt, user_language_preference=user_language_preference)
         
     print(help_message)
 
