@@ -1,13 +1,16 @@
+import os
 import re
+from constants import OUTPUT_DIR
 from downloader import download_video
 from transcriber import get_youtube_transcript, transcribe_video
 from summarizer import generate_key_moments_algorithmically, generate_response_async, get_welcome_message, generate_key_moments_with_titles, generate_enhanced_response
 from highlights import extract_highlights, generate_highlights, generate_custom_highlights, merge_clips
 from retrieval import initialize_indexes, retrieve_chunks
-from utils import format_timestamp
+from utils import format_time_duration, format_timestamp
 import asyncio
 import time
 from meeting_minutes import generate_meeting_minutes, save_meeting_minutes, format_minutes_for_display
+from dubbing import create_english_dub
 
 
 def validate_video_file(file_path):
@@ -126,6 +129,8 @@ VidSense helps you extract insights from videos with these features:
   • "reel" → Create a short clip for social media
   • "podcast" → Generate a conversational podcast about the video
   • "casual podcast" → Create a podcast with specific style
+  • "english dub" → Create English-dubbed version of non-English videos
+
 
 💬 CONVERSATION:
   • Ask any question about the video content
@@ -322,6 +327,9 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
 
         elif re.search(r'meeting minutes|minutes|meeting notes|meeting summary', user_input.lower()):
             query_type = "meeting_minutes"
+
+        elif re.search(r'english dub|dub|dubbing|voice over|translate audio|translate voice', user_input.lower()):
+            query_type = "english_dub"
         
         # First check for highlight-related requests since they can overlap with other patterns
         elif re.search(r'highlight|best parts|important parts|generate', user_input.lower()):
@@ -411,6 +419,36 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
                             print("... (script continues)")
                 else:
                     print("Sorry, I couldn't generate a podcast for this video. Please try again.")
+
+        elif query_type == "english_dub":
+                if detected_language == "en":
+                    print("This video appears to already be in English. No dubbing needed.")
+                else:
+                    print(f"Creating English-dubbed version of this {detected_language} video. This may take some time...")
+                    
+                    # Call the dubbing function
+                    dubbed_video_path, dubbing_stats = await create_english_dub(
+                        downloaded_file,
+                        transcript_segments,
+                        detected_language,
+                        OUTPUT_DIR
+                    )
+                    
+                    if dubbed_video_path and os.path.exists(dubbed_video_path):
+                        print("\nEnglish-dubbed video created successfully!")
+                        print(f"Saved to: {dubbed_video_path}")
+                        
+                        # Display stats about the dubbing
+                        if isinstance(dubbing_stats, dict):
+                            print("\nDubbing Statistics:")
+                            print(f"• Original Language: {dubbing_stats.get('original_language', detected_language)}")
+                            print(f"• Segments Translated: {dubbing_stats.get('segments_translated', len(transcript_segments))}")
+                            print(f"• Video Duration: {format_time_duration(dubbing_stats.get('duration', 0))}")
+                            print(f"• Processing Time: {dubbing_stats.get('processing_time', 'N/A')}")
+                    else:
+                        print(f"Sorry, I couldn't create an English-dubbed version of this video.")
+                        if isinstance(dubbing_stats, str):
+                            print(f"Reason: {dubbing_stats}")
 
         # In main.py, modify the meeting minutes generation part
         elif query_type == "meeting_minutes":
@@ -605,6 +643,7 @@ VidSense Commands:
 - "podcast": Generate a conversation-style podcast about the video content
 - "podcast [style]": Generate a podcast with a specific style (casual, educational, etc.)
 - "reel": Create a short clip for social media
+- "english dub": Create English-dubbed version of non-English videos
 - "help": Show this help message
 - "quit": Exit the application
         """
@@ -621,6 +660,7 @@ VidSense Commands:
 - "podcast": Generate a conversation-style podcast about the video content
 - "podcast [style]": Generate a podcast with a specific style (casual, educational, etc.)
 - "reel": Create a short clip for social media
+- "english dub": Create English-dubbed version of non-English videos
 - "help": Show this help message
 - "quit": Exit the application
         """.format(detected_language)
