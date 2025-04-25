@@ -14,6 +14,43 @@ from dubbing import create_english_dub
 from video_qa import answer_video_question, generate_faq
 from subtitling import adjust_subtitle_timing_by_offset, create_english_subtitles, embed_subtitles_in_video
 from algorithmic_highlights import generate_highlights_algorithmically
+import tkinter as tk
+from tkinter import filedialog
+
+
+def open_file_dialog():
+    """
+    Opens a file dialog for the user to select a video file.
+    
+    Returns:
+        str or None: Path to the selected file, or None if canceled
+    """
+    # Create a hidden root window for the dialog
+    root = tk.Tk()
+    root.withdraw()  # Hide the main window
+    
+    # Define valid video file types
+    filetypes = [
+        ("Video files", "*.mp4 *.avi *.mov *.mkv *.webm *.wmv *.flv *.3gp"),
+        ("MP4 files", "*.mp4"),
+        ("AVI files", "*.avi"),
+        ("MOV files", "*.mov"),
+        ("MKV files", "*.mkv"),
+        ("All files", "*.*")
+    ]
+    
+    # Open the file dialog
+    file_path = filedialog.askopenfilename(
+        title="Select a video file",
+        filetypes=filetypes
+    )
+    
+    # Destroy the root window after selection
+    root.destroy()
+    
+    # Return the selected file path (or None if canceled)
+    return file_path if file_path else None
+
 
 
 def validate_video_file(file_path):
@@ -60,20 +97,20 @@ def validate_video_file(file_path):
         
     return True, None
 
-async def handle_file_upload(file_path):
+async def handle_file_upload():
     """
-    Process a locally uploaded video file.
+    Process a locally uploaded video file using a file dialog.
     
-    Args:
-        file_path: Path to the uploaded video file
-        
     Returns:
         Tuple containing (downloaded_file, video_title, video_description, video_id)
     """
-    # Copy or move the file to the output directory
-    from constants import OUTPUT_DIR
-    import os
-    import shutil
+    # Open file dialog to select video file
+    file_path = open_file_dialog()
+    
+    # If user canceled the file dialog
+    if not file_path:
+        print("File selection canceled.")
+        return None, None, None, None
     
     # Validate the video file
     is_valid, error_message = validate_video_file(file_path)
@@ -95,6 +132,7 @@ async def handle_file_upload(file_path):
     try:
         # Copy the file to the output directory
         print(f"Copying file to processing directory...")
+        import shutil
         shutil.copy2(file_path, output_file)
         print(f"File copied successfully.")
     except Exception as e:
@@ -175,24 +213,21 @@ Type "help" anytime to see this list again.
         # Handle file upload with retry logic
         max_attempts = 3
         for attempt in range(max_attempts):
-            file_path = input("Please enter the full path to your video file: ")
+            print("\nPlease select your video file from the file explorer window that will open.")
             
-            # Allow user to go back to the choice selection
-            if file_path.lower() in ["back", "return", "cancel"]:
-                print("Returning to input selection...")
-                return await chatbot()  # Restart the chatbot
-                
-            print("\nProcessing your uploaded video file...")
-            downloaded_file, video_title, video_description, video_id = await handle_file_upload(file_path)
+            # Open file dialog to select video file
+            downloaded_file, video_title, video_description, video_id = await handle_file_upload()
             
             if downloaded_file:
                 break
             
             if attempt < max_attempts - 1:
-                print(f"Failed to process the video. You have {max_attempts - attempt - 1} more attempts.")
-                print("Type 'back' to return to input selection.")
-            else:
-                print("Maximum attempts reached.")
+                retry = input(f"Failed to process the video. You have {max_attempts - attempt - 1} more attempts. Try again? (y/n): ")
+                if retry.lower() not in ["y", "yes"]:
+                    print("Returning to input selection...")
+                    return await chatbot()  # Restart the chatbot
+        else:
+            print("Maximum attempts reached.")
     else:
         # Handle YouTube link (existing functionality) with retry logic
         max_attempts = 3
@@ -349,20 +384,6 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
 
         elif re.search(r'english dub|dub|dubbing|voice over|translate audio|translate voice', user_input.lower()):
             query_type = "english_dub"
-
-        # Add these pattern matches to the query_type detection section in the main loop:
-        elif re.search(r'(^|\s)faq\s|frequently asked|common questions', user_input.lower()):
-            query_type = "generate_faq"
-
-        # Add these pattern matches to identify text-only question requests
-        elif re.search(r'text[- ]only|no[- ]clip|without[- ]clip|just[- ]text|only[- ]text', user_input.lower()):
-            # If user explicitly asks for text-only answer
-            query_type = "text_only_question"
-            user_input = re.sub(r'text[- ]only|no[- ]clip|without[- ]clip|just[- ]text|only[- ]text', '', user_input).strip()
-        elif re.search(r'at what|when did|who|what|where|why|how|explain|tell me about|find|show me', user_input.lower()) and len(user_input.split()) > 3:
-            # If the input looks like a question and has more than 3 words
-            query_type = "answer_question"
-
         
         # First check for highlight-related requests since they can overlap with other patterns
         elif re.search(r'highlight|best parts|important parts|generate', user_input.lower()):
@@ -452,72 +473,6 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
                             print("... (script continues)")
                 else:
                     print("Sorry, I couldn't generate a podcast for this video. Please try again.")
-
-        # # Add this handler to the main conditional section that processes different query types
-        # elif query_type == "english_subtitles":
-        #     if detected_language == "en":
-        #         print("This video appears to already be in English. No subtitles needed.")
-        #     else:
-        #         print(f"Creating English subtitles for this {detected_language} video. This may take some time...")
-                
-        #         # Call the subtitling function
-        #         subtitled_video_path, subtitle_path, subtitling_stats = await create_english_subtitles(
-        #             downloaded_file,
-        #             transcript_segments,
-        #             detected_language,
-        #             OUTPUT_DIR
-        #         )
-                
-        #         if subtitle_path and os.path.exists(subtitle_path):
-        #             print("\nEnglish subtitle file created successfully!")
-        #             print(f"Subtitle file saved to: {subtitle_path}")
-                    
-        #             if subtitled_video_path and os.path.exists(subtitled_video_path):
-        #                 print("\nVideo with embedded subtitles created successfully!")
-        #                 print(f"Saved to: {subtitled_video_path}")
-        #             else:
-        #                 print("\nNote: Could not embed subtitles directly. You can use the subtitle file with your media player.")
-                    
-        #             # Display stats about the subtitling
-        #             if isinstance(subtitling_stats, dict):
-        #                 print("\nSubtitling Statistics:")
-        #                 print(f"• Original Language: {subtitling_stats.get('original_language', detected_language)}")
-        #                 print(f"• Segments Translated: {subtitling_stats.get('segments_translated', len(transcript_segments))}")
-        #                 print(f"• Processing Time: {subtitling_stats.get('processing_time', 'N/A')}")
-        #         else:
-        #             print(f"Sorry, I couldn't create English subtitles for this video.")
-        #             if isinstance(subtitling_stats, str):
-        #                 print(f"Reason: {subtitling_stats}")
-
-        # elif query_type == "english_dub":
-        #         if detected_language == "en":
-        #             print("This video appears to already be in English. No dubbing needed.")
-        #         else:
-        #             print(f"Creating English-dubbed version of this {detected_language} video. This may take some time...")
-                    
-        #             # Call the dubbing function
-        #             dubbed_video_path, dubbing_stats = await create_english_dub(
-        #                 downloaded_file,
-        #                 transcript_segments,
-        #                 detected_language,
-        #                 OUTPUT_DIR
-        #             )
-                    
-        #             if dubbed_video_path and os.path.exists(dubbed_video_path):
-        #                 print("\nEnglish-dubbed video created successfully!")
-        #                 print(f"Saved to: {dubbed_video_path}")
-                        
-        #                 # Display stats about the dubbing
-        #                 if isinstance(dubbing_stats, dict):
-        #                     print("\nDubbing Statistics:")
-        #                     print(f"• Original Language: {dubbing_stats.get('original_language', detected_language)}")
-        #                     print(f"• Segments Translated: {dubbing_stats.get('segments_translated', len(transcript_segments))}")
-        #                     print(f"• Video Duration: {format_time_duration(dubbing_stats.get('duration', 0))}")
-        #                     print(f"• Processing Time: {dubbing_stats.get('processing_time', 'N/A')}")
-        #             else:
-        #                 print(f"Sorry, I couldn't create an English-dubbed version of this video.")
-        #                 if isinstance(dubbing_stats, str):
-        #                     print(f"Reason: {dubbing_stats}")
 
         elif query_type == "english_subtitles":
             print(f"Creating subtitles for your video. This may take some time...")
@@ -633,127 +588,6 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
                 print(f"Sorry, I couldn't create subtitles for this video.")
                 if isinstance(subtitling_stats, str):
                     print(f"Reason: {subtitling_stats}")
-
-        elif query_type == "generate_faq":
-            print("Generating frequently asked questions about this video...")
-            faq_list = await generate_faq(transcript_segments, video_info)
-            
-            if faq_list:
-                print("\nFrequently Asked Questions:")
-                for i, qa in enumerate(faq_list, 1):
-                    print(f"\nQ{i}: {qa.get('question', 'No question')}")
-                    print(f"A: {qa.get('answer', 'No answer')}")
-            else:
-                print("Sorry, I couldn't generate FAQ for this video.")
-
-        elif query_type == "answer_question":
-            print(f"Searching for an answer to your question in the video content...")
-            
-            # Process the question and get answer with relevant clip
-            qa_result = await answer_video_question(
-                transcript_segments, 
-                downloaded_file,
-                user_input
-            )
-            
-            if qa_result and "answer" in qa_result:
-                # Display the answer
-                print(f"\nAnswer: {qa_result['answer']}")
-                
-                # Show timestamps
-                if qa_result.get("formatted_timestamps"):
-                    print("\nRelevant video segments:")
-                    for ts in qa_result["formatted_timestamps"]:
-                        print(f"• {ts}")
-                
-                # Show clip info if available
-                if qa_result.get("clip_path") and os.path.exists(qa_result["clip_path"]):
-                    print(f"\nI've created a video clip that answers your question:")
-                    print(f"Clip: {qa_result['clip_title']}")
-                    print(f"Saved to: {qa_result['clip_path']}")
-                
-                # Show processing time
-                if qa_result.get("processing_time"):
-                    print(f"\nTime taken to answer: {qa_result['processing_time']:.2f} seconds")
-            else:
-                print("Sorry, I couldn't find a specific answer to that question in the video.")
-
-        elif query_type == "text_only_question":
-            print(f"Finding an answer to your question (text only, no clip will be offered)...")
-            
-            # Process the question and get answer WITHOUT generating a clip
-            qa_result = await answer_video_question(
-                transcript_segments, 
-                downloaded_file,
-                user_input,
-                generate_clip=False  # Explicitly request no clip generation
-            )
-            
-            if qa_result and "answer" in qa_result:
-                # Display the answer
-                print(f"\nAnswer: {qa_result['answer']}")
-                
-                # Show timestamps
-                if qa_result.get("formatted_timestamps"):
-                    print("\nRelevant video segments:")
-                    for ts in qa_result["formatted_timestamps"]:
-                        print(f"• {ts}")
-                
-                # Show processing time
-                if qa_result.get("processing_time"):
-                    print(f"\nTime taken to answer: {qa_result['processing_time']:.2f} seconds")
-            else:
-                print("Sorry, I couldn't find a specific answer to that question in the video.")
-
-        
-        elif query_type == "answer_question":
-            print(f"Searching for an answer to your question in the video content...")
-            
-            # Process the question and get answer WITHOUT generating a clip initially
-            qa_result = await answer_video_question(
-                transcript_segments, 
-                downloaded_file,
-                user_input,
-                generate_clip=False  # Start with text-only answer
-            )
-            
-            if qa_result and "answer" in qa_result:
-                # Display the answer
-                print(f"\nAnswer: {qa_result['answer']}")
-                
-                # Show timestamps
-                if qa_result.get("formatted_timestamps"):
-                    print("\nRelevant video segments:")
-                    for ts in qa_result["formatted_timestamps"]:
-                        print(f"• {ts}")
-                
-                # Ask if the user wants to generate a clip
-                clip_request = input("\nDo you want me to extract the video clip that answers your question? (yes/no): ")
-                
-                if clip_request.lower() in ["yes", "y", "please", "sure", "extract", "generate", "create"]:
-                    print("Generating video clip for your question...")
-                    
-                    # Now generate the clip from the same query results
-                    clip_qa_result = await answer_video_question(
-                        transcript_segments,
-                        downloaded_file,
-                        user_input,
-                        generate_clip=True  # Generate the clip
-                    )
-                    
-                    # Show clip info if available
-                    if clip_qa_result and clip_qa_result.get("clip_path") and os.path.exists(clip_qa_result["clip_path"]):
-                        print(f"\nI've created a video clip that answers your question:")
-                        print(f"Clip: {clip_qa_result['clip_title']}")
-                        print(f"Saved to: {clip_qa_result['clip_path']}")
-                    else:
-                        print("Sorry, I couldn't generate a video clip for this question.")
-                
-                # Show processing time
-                if qa_result.get("processing_time"):
-                    print(f"\nTime taken to answer: {qa_result['processing_time']:.2f} seconds")
-            else:
-                print("Sorry, I couldn't find a specific answer to that question in the video.")
 
         # Handle key moments/timeline requests
         elif query_type == "key_moments":
