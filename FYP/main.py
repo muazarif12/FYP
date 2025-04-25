@@ -12,7 +12,7 @@ import time
 from meeting_minutes import generate_meeting_minutes, save_meeting_minutes, format_minutes_for_display
 from dubbing import create_english_dub
 from video_qa import answer_video_question, generate_faq
-from subtitling import create_english_subtitles
+from subtitling import adjust_subtitle_timing_by_offset, create_english_subtitles, embed_subtitles_in_video
 from algorithmic_highlights import generate_highlights_algorithmically
 
 
@@ -453,103 +453,186 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
                 else:
                     print("Sorry, I couldn't generate a podcast for this video. Please try again.")
 
-        # Add this handler to the main conditional section that processes different query types
-        elif query_type == "english_subtitles":
-            if detected_language == "en":
-                print("This video appears to already be in English. No subtitles needed.")
-            else:
-                print(f"Creating English subtitles for this {detected_language} video. This may take some time...")
+        # # Add this handler to the main conditional section that processes different query types
+        # elif query_type == "english_subtitles":
+        #     if detected_language == "en":
+        #         print("This video appears to already be in English. No subtitles needed.")
+        #     else:
+        #         print(f"Creating English subtitles for this {detected_language} video. This may take some time...")
                 
-                # Call the subtitling function
-                subtitled_video_path, subtitle_path, subtitling_stats = await create_english_subtitles(
-                    downloaded_file,
-                    transcript_segments,
-                    detected_language,
-                    OUTPUT_DIR
-                )
+        #         # Call the subtitling function
+        #         subtitled_video_path, subtitle_path, subtitling_stats = await create_english_subtitles(
+        #             downloaded_file,
+        #             transcript_segments,
+        #             detected_language,
+        #             OUTPUT_DIR
+        #         )
                 
-                if subtitle_path and os.path.exists(subtitle_path):
-                    print("\nEnglish subtitle file created successfully!")
-                    print(f"Subtitle file saved to: {subtitle_path}")
+        #         if subtitle_path and os.path.exists(subtitle_path):
+        #             print("\nEnglish subtitle file created successfully!")
+        #             print(f"Subtitle file saved to: {subtitle_path}")
                     
-                    if subtitled_video_path and os.path.exists(subtitled_video_path):
-                        print("\nVideo with embedded subtitles created successfully!")
-                        print(f"Saved to: {subtitled_video_path}")
-                    else:
-                        print("\nNote: Could not embed subtitles directly. You can use the subtitle file with your media player.")
+        #             if subtitled_video_path and os.path.exists(subtitled_video_path):
+        #                 print("\nVideo with embedded subtitles created successfully!")
+        #                 print(f"Saved to: {subtitled_video_path}")
+        #             else:
+        #                 print("\nNote: Could not embed subtitles directly. You can use the subtitle file with your media player.")
                     
-                    # Display stats about the subtitling
-                    if isinstance(subtitling_stats, dict):
-                        print("\nSubtitling Statistics:")
-                        print(f"• Original Language: {subtitling_stats.get('original_language', detected_language)}")
-                        print(f"• Segments Translated: {subtitling_stats.get('segments_translated', len(transcript_segments))}")
-                        print(f"• Processing Time: {subtitling_stats.get('processing_time', 'N/A')}")
-                else:
-                    print(f"Sorry, I couldn't create English subtitles for this video.")
-                    if isinstance(subtitling_stats, str):
-                        print(f"Reason: {subtitling_stats}")
+        #             # Display stats about the subtitling
+        #             if isinstance(subtitling_stats, dict):
+        #                 print("\nSubtitling Statistics:")
+        #                 print(f"• Original Language: {subtitling_stats.get('original_language', detected_language)}")
+        #                 print(f"• Segments Translated: {subtitling_stats.get('segments_translated', len(transcript_segments))}")
+        #                 print(f"• Processing Time: {subtitling_stats.get('processing_time', 'N/A')}")
+        #         else:
+        #             print(f"Sorry, I couldn't create English subtitles for this video.")
+        #             if isinstance(subtitling_stats, str):
+        #                 print(f"Reason: {subtitling_stats}")
 
-        elif query_type == "english_dub":
-                if detected_language == "en":
-                    print("This video appears to already be in English. No dubbing needed.")
-                else:
-                    print(f"Creating English-dubbed version of this {detected_language} video. This may take some time...")
+        # elif query_type == "english_dub":
+        #         if detected_language == "en":
+        #             print("This video appears to already be in English. No dubbing needed.")
+        #         else:
+        #             print(f"Creating English-dubbed version of this {detected_language} video. This may take some time...")
                     
-                    # Call the dubbing function
-                    dubbed_video_path, dubbing_stats = await create_english_dub(
-                        downloaded_file,
-                        transcript_segments,
-                        detected_language,
-                        OUTPUT_DIR
-                    )
+        #             # Call the dubbing function
+        #             dubbed_video_path, dubbing_stats = await create_english_dub(
+        #                 downloaded_file,
+        #                 transcript_segments,
+        #                 detected_language,
+        #                 OUTPUT_DIR
+        #             )
                     
-                    if dubbed_video_path and os.path.exists(dubbed_video_path):
-                        print("\nEnglish-dubbed video created successfully!")
-                        print(f"Saved to: {dubbed_video_path}")
+        #             if dubbed_video_path and os.path.exists(dubbed_video_path):
+        #                 print("\nEnglish-dubbed video created successfully!")
+        #                 print(f"Saved to: {dubbed_video_path}")
                         
-                        # Display stats about the dubbing
-                        if isinstance(dubbing_stats, dict):
-                            print("\nDubbing Statistics:")
-                            print(f"• Original Language: {dubbing_stats.get('original_language', detected_language)}")
-                            print(f"• Segments Translated: {dubbing_stats.get('segments_translated', len(transcript_segments))}")
-                            print(f"• Video Duration: {format_time_duration(dubbing_stats.get('duration', 0))}")
-                            print(f"• Processing Time: {dubbing_stats.get('processing_time', 'N/A')}")
-                    else:
-                        print(f"Sorry, I couldn't create an English-dubbed version of this video.")
-                        if isinstance(dubbing_stats, str):
-                            print(f"Reason: {dubbing_stats}")
+        #                 # Display stats about the dubbing
+        #                 if isinstance(dubbing_stats, dict):
+        #                     print("\nDubbing Statistics:")
+        #                     print(f"• Original Language: {dubbing_stats.get('original_language', detected_language)}")
+        #                     print(f"• Segments Translated: {dubbing_stats.get('segments_translated', len(transcript_segments))}")
+        #                     print(f"• Video Duration: {format_time_duration(dubbing_stats.get('duration', 0))}")
+        #                     print(f"• Processing Time: {dubbing_stats.get('processing_time', 'N/A')}")
+        #             else:
+        #                 print(f"Sorry, I couldn't create an English-dubbed version of this video.")
+        #                 if isinstance(dubbing_stats, str):
+        #                     print(f"Reason: {dubbing_stats}")
 
-        # In main.py, modify the meeting minutes generation part
-        elif query_type == "meeting_minutes":
-            print("Generating meeting minutes based on the video content. This may take a few minutes...")
+        elif query_type == "english_subtitles":
+            print(f"Creating subtitles for your video. This may take some time...")
             
-            # Generate meeting minutes with timestamped transcript
-            minutes_data = await generate_meeting_minutes(
-                transcript_segments, 
-                video_info, 
+            # Call the subtitling function with automatic sync
+            subtitled_video_path, subtitle_path, subtitling_stats = await create_english_subtitles(
+                downloaded_file,
+                transcript_segments,
                 detected_language,
-                timestamped_transcript=full_timestamped_transcript  # Pass the timestamped transcript
+                OUTPUT_DIR
             )
             
-            if minutes_data:
-                # Save meeting minutes to a file
-                minutes_path = await save_meeting_minutes(minutes_data, format="md")
+            if subtitle_path and os.path.exists(subtitle_path):
+                print("\nSubtitle file created successfully!")
+                print(f"Subtitle file saved to: {subtitle_path}")
                 
-                if minutes_path:
-                    print("\nMeeting minutes generated successfully!")
-                    print(f"Saved to: {minutes_path}")
-                    
-                    # Display a summary of the meeting minutes
-                    formatted_minutes = format_minutes_for_display(minutes_data)
-                    print(formatted_minutes)
-                    
-                    # Print help info about the file
-                    print("\nThe complete meeting minutes have been saved to the file above.")
-                    print("You can open this file to view all details including action items and decisions.")
+                if subtitled_video_path and os.path.exists(subtitled_video_path):
+                    print("\nVideo with embedded subtitles created successfully!")
+                    print(f"Saved to: {subtitled_video_path}")
                 else:
-                    print("Generated meeting minutes but failed to save to file.")
+                    print("\nNote: Could not embed subtitles directly. You can use the subtitle file with your media player.")
+                
+                # Display stats about the subtitling
+                if isinstance(subtitling_stats, dict):
+                    print("\nSubtitling Statistics:")
+                    print(f"• Original Language: {subtitling_stats.get('original_language', detected_language)}")
+                    print(f"• Segments Processed: {subtitling_stats.get('segments_processed', len(transcript_segments))}")
+                    print(f"• Synchronization: {subtitling_stats.get('sync_delay', 'Automatic')}s")
+                    print(f"• Processing Time: {subtitling_stats.get('processing_time', 'N/A')}")
+                
+                # Ask user to check synchronization
+                sync_feedback_loop = True
+                current_subtitle_path = subtitle_path
+                current_video_path = subtitled_video_path
+                
+                while sync_feedback_loop:
+                    print("\nPlease check if the subtitles are properly synchronized with the speech in the video.")
+                    sync_feedback = input("Are the subtitles synchronized correctly? (yes/no): ").lower()
+                    
+                    if sync_feedback in ["yes", "y", "correct", "good", "fine", "ok", "okay"]:
+                        print("Great! The subtitles are synchronized correctly.")
+                        sync_feedback_loop = False
+                    
+                    elif sync_feedback in ["no", "n", "wrong", "bad", "off", "incorrect"]:
+                        print("\nLet's adjust the subtitle timing to make them match the speech better.")
+                        
+                        # Get adjustment direction and amount
+                        adjustment_input = input("\nPlease tell me if the subtitles appear too early or too late, and by how many seconds (e.g., 'early by 2.5 seconds' or 'late by 4 seconds'): ")
+                        
+                        # Parse adjustment input
+                        early_match = re.search(r'(early|before|ahead|soon|fast|quick)\s+by\s+(\d+\.?\d*)', adjustment_input.lower())
+                        late_match = re.search(r'(late|after|behind|delayed|slow)\s+by\s+(\d+\.?\d*)', adjustment_input.lower())
+                        
+                        adjustment_seconds = 0
+                        
+                        if early_match:
+                            # Subtitles appear too early, need to delay them
+                            adjustment_seconds = float(early_match.group(2))
+                            print(f"I'll delay the subtitles by {adjustment_seconds} seconds.")
+                        elif late_match:
+                            # Subtitles appear too late, need to advance them
+                            adjustment_seconds = -float(late_match.group(2))
+                            print(f"I'll advance the subtitles by {abs(adjustment_seconds)} seconds.")
+                        else:
+                            # Try to parse a direct seconds value
+                            direct_seconds_match = re.search(r'(-?\d+\.?\d*)\s*(?:s|sec|seconds)?', adjustment_input)
+                            if direct_seconds_match:
+                                adjustment_seconds = float(direct_seconds_match.group(1))
+                                if "early" in adjustment_input.lower():
+                                    adjustment_seconds = abs(adjustment_seconds)  # Make sure it's positive
+                                elif "late" in adjustment_input.lower():
+                                    adjustment_seconds = -abs(adjustment_seconds)  # Make sure it's negative
+                                    
+                                if adjustment_seconds > 0:
+                                    print(f"I'll delay the subtitles by {adjustment_seconds} seconds.")
+                                else:
+                                    print(f"I'll advance the subtitles by {abs(adjustment_seconds)} seconds.")
+                            else:
+                                print("I couldn't understand the adjustment needed. Please try again with a format like 'early by 2.5 seconds' or 'late by 4 seconds'.")
+                                continue
+                        
+                        print("\nAdjusting subtitle timing...")
+                        # Adjust the subtitle file
+                        adjusted_subtitle_path = await adjust_subtitle_timing_by_offset(
+                            current_subtitle_path, 
+                            adjustment_seconds,
+                            output_dir=os.path.dirname(current_subtitle_path)
+                        )
+                        
+                        if adjusted_subtitle_path and os.path.exists(adjusted_subtitle_path):
+                            print(f"Adjusted subtitle file created at: {adjusted_subtitle_path}")
+                            
+                            # Create new video with adjusted subtitles
+                            print("Embedding adjusted subtitles into video...")
+                            adjusted_video_path = await embed_subtitles_in_video(
+                                downloaded_file,  # Use original video
+                                adjusted_subtitle_path,
+                                OUTPUT_DIR
+                            )
+                            
+                            if adjusted_video_path and os.path.exists(adjusted_video_path):
+                                print(f"New video with adjusted subtitles created at: {adjusted_video_path}")
+                                current_subtitle_path = adjusted_subtitle_path
+                                current_video_path = adjusted_video_path
+                            else:
+                                print("Failed to create new video, but you can use the adjusted subtitle file with your media player.")
+                                current_subtitle_path = adjusted_subtitle_path
+                        else:
+                            print("Failed to adjust subtitle timing. Please try again with different values.")
+                    else:
+                        print("I didn't understand your response. Please answer 'yes' if the synchronization is correct or 'no' if it needs adjustment.")
             else:
-                print("Sorry, I couldn't generate meeting minutes for this video. Please try again.")
+                print(f"Sorry, I couldn't create subtitles for this video.")
+                if isinstance(subtitling_stats, str):
+                    print(f"Reason: {subtitling_stats}")
 
         elif query_type == "generate_faq":
             print("Generating frequently asked questions about this video...")
