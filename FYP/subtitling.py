@@ -200,13 +200,16 @@ async def embed_subtitles_in_video(video_path, subtitle_path, output_dir):
         base_name, ext = os.path.splitext(video_filename)
         output_path = os.path.join(subtitled_dir, f"{base_name}_subtitled{ext}")
         
-        # Skip the first method that just embeds subtitles as a separate stream
-        # Use subtitle filter directly to burn-in/hardcode subtitles
+        # Fix: Properly escape the path for FFmpeg
+        # On Windows, we need to ensure the path is properly formatted
+        subtitle_path_escaped = subtitle_path.replace('\\', '\\\\')
+        
+        # Use subtitle filter to hardcode subtitles
         logger.info("Hardcoding subtitles into video...")
         ffmpeg_command = [
             "ffmpeg", "-y",
             "-i", video_path,
-            "-vf", f"subtitles={subtitle_path}",
+            "-vf", f"subtitles='{subtitle_path_escaped}'",  # Quote and escape the path
             "-c:a", "copy",  # Copy audio without re-encoding
             output_path
         ]
@@ -221,7 +224,28 @@ async def embed_subtitles_in_video(video_path, subtitle_path, output_dir):
         
         if process.returncode != 0:
             logger.error(f"Subtitling failed: {stderr.decode()}")
-            return None
+            
+            # Try alternative approach with direct file input
+            logger.info("Trying alternative method for subtitle embedding...")
+            alt_command = [
+                "ffmpeg", "-y",
+                "-i", video_path,
+                "-vf", f"subtitles=filename='{subtitle_path_escaped}'",  # Alternative syntax
+                "-c:a", "copy",
+                output_path
+            ]
+            
+            process = await asyncio.create_subprocess_exec(
+                *alt_command,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            
+            stdout, stderr = await process.communicate()
+            
+            if process.returncode != 0:
+                logger.error(f"Alternative subtitling failed: {stderr.decode()}")
+                return None
         
         logger.info(f"Subtitled video created successfully: {output_path}")
         return output_path

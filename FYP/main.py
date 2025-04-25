@@ -13,6 +13,7 @@ from meeting_minutes import generate_meeting_minutes, save_meeting_minutes, form
 from dubbing import create_english_dub
 from video_qa import answer_video_question, generate_faq
 from subtitling import create_english_subtitles
+from algorithmic_highlights import generate_highlights_algorithmically
 
 
 def validate_video_file(file_path):
@@ -716,7 +717,11 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
             else:
                 print("Generating video highlights. This may take a few minutes...")
 
-            # Generate highlight segments
+            # Check if user requested fast generation explicitly
+            use_fast_method = ("fast" in user_input.lower() or "quick" in user_input.lower() or 
+                            "algorithmic" in user_input.lower())
+            
+            # For custom prompts, always use LLM method since it understands specific requirements better
             if query_type == "custom_prompt_highlights":
                 # Generate highlights with custom instructions
                 highlight_segments = await generate_custom_highlights(
@@ -726,62 +731,72 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
                     user_input,
                     target_duration=target_duration
                 )
-            else:  # Regular highlights or duration-specific highlights
-                # Both use the same function, but with different target_duration values
-                _, highlight_segments = await generate_highlights(
-                    downloaded_file,
-                    transcript_segments,
-                    video_info,
-                    target_duration=target_duration,
-                    is_reel=False
-                )
-
-            # Extract and merge clips for all highlight types
-            if highlight_segments:
-                print("Extracting highlight clips...")
-                clip_paths, highlight_info = extract_highlights(downloaded_file, highlight_segments)
                 
-                print("Merging clips into final video...")
-                highlights_path = merge_clips(clip_paths, highlight_info, is_reel=False)
-            else:
-                highlights_path = None
+                # Extract and merge clips for all highlight types
+                if highlight_segments:
+                    print("Extracting highlight clips...")
+                    clip_paths, highlight_info = extract_highlights(downloaded_file, highlight_segments)
+                    
+                    print("Merging clips into final video...")
+                    highlights_path = merge_clips(clip_paths, highlight_info, is_reel=False)
+                else:
+                    highlights_path = None
+            
+            else:  # Regular highlights or duration-specific highlights
+                if use_fast_method:
+                    print("Using fast algorithmic highlight generation...")
+                    highlights_path, highlight_segments = await generate_highlights_algorithmically(
+                        downloaded_file,
+                        transcript_segments,
+                        video_info,
+                        target_duration=target_duration,
+                        is_reel=False
+                    )
+                else:
+                    # Use LLM-based method (original code)
+                    _, highlight_segments = await generate_highlights(
+                        downloaded_file,
+                        transcript_segments,
+                        video_info,
+                        target_duration=target_duration,
+                        is_reel=False
+                    )
+                    
+                    # Extract and merge clips
+                    if highlight_segments:
+                        print("Extracting highlight clips...")
+                        clip_paths, highlight_info = extract_highlights(downloaded_file, highlight_segments)
+                        
+                        print("Merging clips into final video...")
+                        highlights_path = merge_clips(clip_paths, highlight_info, is_reel=False)
+                    else:
+                        highlights_path = None
 
-            # Format and display results
-            if highlights_path:
-                highlights_generated = True
-                # Format highlight descriptions
-                highlight_descriptions = []
-                total_duration = 0
-                for hl in highlight_segments:
-                    start_time = format_timestamp(hl["start"])
-                    end_time = format_timestamp(hl["end"])
-                    duration = hl["end"] - hl["start"]
-                    total_duration += duration
-                    highlight_descriptions.append(f"• {start_time} - {end_time} ({duration:.1f}s): {hl['description']}")
-
-                # Display results
-                print("\nHighlights generated successfully!")
-                print(f"Total duration: {total_duration:.1f} seconds")
-                print(f"Saved to: {highlights_path}")
-                print("\nHighlight segments:")
-                for desc in highlight_descriptions:
-                    print(f"• {desc}")
-            else:
-                print("Sorry, I couldn't generate highlights for this video. Please try again.")
-
-        # Handle reel generation
         elif query_type == "reel":
             print("Generating a short reel for social media. This may take a few minutes...")
 
-            # Generate reel
-            reel_path, reel_segments = await generate_highlights(
-                downloaded_file,
-                transcript_segments,
-                video_info,
-                target_duration=60,  # Default to 60 seconds max for reels
-                is_reel=True
-            )
-
+            # Check if user requested fast generation
+            use_fast_method = ("fast" in user_input.lower() or "quick" in user_input.lower() or 
+                            "algorithmic" in user_input.lower())
+                            
+            if use_fast_method:
+                print("Using fast algorithmic reel generation...")
+                reel_path, reel_segments = await generate_highlights_algorithmically(
+                    downloaded_file,
+                    transcript_segments,
+                    video_info,
+                    target_duration=60,  # Default to 60 seconds max for reels
+                    is_reel=True
+                )
+            else:
+                # Generate reel using LLM method (original code)
+                reel_path, reel_segments = await generate_highlights(
+                    downloaded_file,
+                    transcript_segments,
+                    video_info,
+                    target_duration=60,  # Default to 60 seconds max for reels
+                    is_reel=True
+                )
             if reel_path:
                 reel_generated = True
                 # Format reel descriptions
@@ -829,6 +844,7 @@ VidSense Commands:
 - "meeting minutes": Generate structured meeting notes and action items
 - "highlights": Generate video highlights
 - "highlights X minutes": Generate X minutes of highlights
+- "fast highlights": Generate highlights more quickly (algorithmic method)
 - "podcast": Generate a conversation-style podcast about the video content
 - "podcast [style]": Generate a podcast with a specific style (casual, educational, etc.)
 - "reel": Create a short clip for social media
