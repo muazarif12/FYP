@@ -11,7 +11,8 @@ import asyncio
 import time
 from meeting_minutes import generate_meeting_minutes, save_meeting_minutes, format_minutes_for_display
 from dubbing import create_english_dub
-from video_qa import answer_video_question, generate_faq    
+from video_qa import answer_video_question, generate_faq
+from subtitling import create_english_subtitles
 
 
 def validate_video_file(file_path):
@@ -131,6 +132,7 @@ VidSense helps you extract insights from videos with these features:
   • "podcast" → Generate a conversational podcast about the video
   • "casual podcast" → Create a podcast with specific style
   • "english dub" → Create English-dubbed version of non-English videos
+  • "english subtitles" → Add English subtitles to non-English video
 
 
 💬 CONVERSATION:
@@ -336,6 +338,11 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
             
             query_type = "podcast"
 
+        
+# Add this to your query type detection section in the main loop:
+        elif re.search(r'english subtitles|add subtitles|create subtitles|subtitle', user_input.lower()):
+            query_type = "english_subtitles"
+
         elif re.search(r'meeting minutes|minutes|meeting notes|meeting summary', user_input.lower()):
             query_type = "meeting_minutes"
 
@@ -445,6 +452,42 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
                 else:
                     print("Sorry, I couldn't generate a podcast for this video. Please try again.")
 
+        # Add this handler to the main conditional section that processes different query types
+        elif query_type == "english_subtitles":
+            if detected_language == "en":
+                print("This video appears to already be in English. No subtitles needed.")
+            else:
+                print(f"Creating English subtitles for this {detected_language} video. This may take some time...")
+                
+                # Call the subtitling function
+                subtitled_video_path, subtitle_path, subtitling_stats = await create_english_subtitles(
+                    downloaded_file,
+                    transcript_segments,
+                    detected_language,
+                    OUTPUT_DIR
+                )
+                
+                if subtitle_path and os.path.exists(subtitle_path):
+                    print("\nEnglish subtitle file created successfully!")
+                    print(f"Subtitle file saved to: {subtitle_path}")
+                    
+                    if subtitled_video_path and os.path.exists(subtitled_video_path):
+                        print("\nVideo with embedded subtitles created successfully!")
+                        print(f"Saved to: {subtitled_video_path}")
+                    else:
+                        print("\nNote: Could not embed subtitles directly. You can use the subtitle file with your media player.")
+                    
+                    # Display stats about the subtitling
+                    if isinstance(subtitling_stats, dict):
+                        print("\nSubtitling Statistics:")
+                        print(f"• Original Language: {subtitling_stats.get('original_language', detected_language)}")
+                        print(f"• Segments Translated: {subtitling_stats.get('segments_translated', len(transcript_segments))}")
+                        print(f"• Processing Time: {subtitling_stats.get('processing_time', 'N/A')}")
+                else:
+                    print(f"Sorry, I couldn't create English subtitles for this video.")
+                    if isinstance(subtitling_stats, str):
+                        print(f"Reason: {subtitling_stats}")
+
         elif query_type == "english_dub":
                 if detected_language == "en":
                     print("This video appears to already be in English. No dubbing needed.")
@@ -551,9 +594,8 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
             else:
                 print("Sorry, I couldn't find a specific answer to that question in the video.")
 
-        # Add the text-only handler to the main conditional section
         elif query_type == "text_only_question":
-            print(f"Finding an answer to your question (text only)...")
+            print(f"Finding an answer to your question (text only, no clip will be offered)...")
             
             # Process the question and get answer WITHOUT generating a clip
             qa_result = await answer_video_question(
@@ -579,16 +621,16 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
             else:
                 print("Sorry, I couldn't find a specific answer to that question in the video.")
 
-        # Keep the existing answer_question handler, but update to pass the generate_clip parameter
+        
         elif query_type == "answer_question":
             print(f"Searching for an answer to your question in the video content...")
             
-            # Process the question and get answer with relevant clip
+            # Process the question and get answer WITHOUT generating a clip initially
             qa_result = await answer_video_question(
                 transcript_segments, 
                 downloaded_file,
                 user_input,
-                generate_clip=True  # Explicitly request clip generation
+                generate_clip=False  # Start with text-only answer
             )
             
             if qa_result and "answer" in qa_result:
@@ -601,11 +643,27 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
                     for ts in qa_result["formatted_timestamps"]:
                         print(f"• {ts}")
                 
-                # Show clip info if available
-                if qa_result.get("clip_path") and os.path.exists(qa_result["clip_path"]):
-                    print(f"\nI've created a video clip that answers your question:")
-                    print(f"Clip: {qa_result['clip_title']}")
-                    print(f"Saved to: {qa_result['clip_path']}")
+                # Ask if the user wants to generate a clip
+                clip_request = input("\nDo you want me to extract the video clip that answers your question? (yes/no): ")
+                
+                if clip_request.lower() in ["yes", "y", "please", "sure", "extract", "generate", "create"]:
+                    print("Generating video clip for your question...")
+                    
+                    # Now generate the clip from the same query results
+                    clip_qa_result = await answer_video_question(
+                        transcript_segments,
+                        downloaded_file,
+                        user_input,
+                        generate_clip=True  # Generate the clip
+                    )
+                    
+                    # Show clip info if available
+                    if clip_qa_result and clip_qa_result.get("clip_path") and os.path.exists(clip_qa_result["clip_path"]):
+                        print(f"\nI've created a video clip that answers your question:")
+                        print(f"Clip: {clip_qa_result['clip_title']}")
+                        print(f"Saved to: {clip_qa_result['clip_path']}")
+                    else:
+                        print("Sorry, I couldn't generate a video clip for this question.")
                 
                 # Show processing time
                 if qa_result.get("processing_time"):
@@ -775,6 +833,7 @@ VidSense Commands:
 - "podcast [style]": Generate a podcast with a specific style (casual, educational, etc.)
 - "reel": Create a short clip for social media
 - "english dub": Create English-dubbed version of non-English videos
+- "english subtitles": Add English subtitles to non-English video
 - "faq": Generate frequently asked questions about the video
 - Ask specific questions like "What did they say about X?" (creates answer clip)
 - For text-only answers: Add "text only" before your question
