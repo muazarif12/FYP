@@ -1129,3 +1129,216 @@ async def generate_custom_highlights(video_path, transcript_segments, video_info
                                         num_segments=max(3, int(target_duration / 30)),
                                         segment_duration=min(30, target_duration / 3),
                                         is_reel=False)
+
+
+
+##################################   Interactive    Q/A  ##################################################################################
+
+def extract_qa_clips(video_path, highlights):
+    """Extract precise clips for Q&A functionality using MoviePy."""
+    temp_dir = os.path.join(OUTPUT_DIR, "temp_qa_clips")
+    os.makedirs(temp_dir, exist_ok=True)
+
+    def extract_single(idx, hl):
+        s, e = hl["start"], hl["end"]
+        out_file = os.path.join(temp_dir, f"qa_clip_{idx}.mp4")
+        try:
+            logger.info(f"Extracting Q&A clip {idx+1}/{len(highlights)}: {s:.1f}s–{e:.1f}s")
+            # Use the correct import and method for MoviePy 2.0+
+            from moviepy import VideoFileClip
+            video = VideoFileClip(video_path)
+            
+            # Skip intro segments unless explicitly requested
+            if s < 30 and not "introduction" in hl["description"].lower():
+                logger.info(f"Skipping intro segment at {s:.1f}s")
+                video.close()
+                return None, None
+            
+            # Load a small buffer for smoother cutting, but respect the actual boundaries for the final clip
+            load_buffer = 0.5  # Buffer for loading (to avoid frame dropping at the edges)
+            start_load = max(0, s - load_buffer)
+            end_load = min(video.duration, e + load_buffer)
+            
+            # First load a slightly larger segment to ensure smooth cutting
+            working_clip = video.subclipped(start_load, end_load)
+            
+            # Then precisely cut at the exact timestamps (relative to the working clip's start)
+            precise_start = s - start_load  # Relative position in the working clip
+            precise_end = e - start_load    # Relative position in the working clip
+            
+            # Ensure we don't get negative values if s was 0
+            precise_start = max(0, precise_start)
+            
+            # Create the final clip with precise boundaries
+            final_clip = working_clip.subclipped(precise_start, precise_end)
+            
+            # Write to file
+            final_clip.write_videofile(
+                out_file,
+                codec="libx264",
+                audio_codec="aac",
+                threads=4,
+                preset="veryfast",
+            )
+            
+            # Clean up
+            final_clip.close()
+            working_clip.close()
+            video.close()
+
+            if os.path.exists(out_file) and os.path.getsize(out_file) > 0:
+                return out_file, hl
+            else:
+                logger.error(f"Failed to create Q&A clip at {out_file} (empty).")
+                return None, None
+        except Exception as exc:
+            logger.error(f"Error extracting Q&A clip {idx}: {exc}")
+            return None, None
+
+    try:
+        successful_clips = []
+        highlight_info = []
+
+        with ThreadPoolExecutor(max_workers=min(os.cpu_count(), 4)) as executor:
+            futures = {executor.submit(extract_single, i, hl): i for i, hl in enumerate(highlights)}
+            for future in futures:
+                clip_path, info = future.result()
+                if clip_path:
+                    successful_clips.append(clip_path)
+                    highlight_info.append(info)
+
+        # Check if we have any successful clips
+        if not successful_clips:
+            # If no successful clips, try to create a single meaningful clip from the middle of the video
+            logger.warning("No Q&A clips were successfully extracted. Creating a fallback clip.")
+            fallback_clip = os.path.join(temp_dir, "qa_fallback.mp4")
+            
+            from moviepy import VideoFileClip
+            video = VideoFileClip(video_path)
+            
+            # Try to find a meaningful part (not intro)
+            video_middle = video.duration / 2
+            fallback_start = max(30, video_middle - 15)  # Start at least 30 seconds in
+            fallback_duration = min(30, video.duration - fallback_start)
+            
+            # Use subclipped
+            clip = video.subclipped(fallback_start, fallback_start + fallback_duration)
+            clip.write_videofile(
+                fallback_clip,
+                codec="libx264",
+                audio_codec="aac",
+                threads=4,
+                preset="veryfast",
+            )
+            clip.close()
+            video.close()
+
+            return [fallback_clip], [{
+                "start": fallback_start,
+                "end": fallback_start + fallback_duration,
+                "description": "Q&A fallback clip (middle of video)"
+            }]
+
+        # Return successful clips
+        return successful_clips, highlight_info
+
+    except Exception as e:
+        logger.error(f"Error extracting Q&A clips: {e}")
+        return [], []
+
+def merge_qa_clips(clip_paths, highlight_info, is_reel=False):
+    """Merge Q&A clips with precise boundaries and better naming."""
+    logger.info(f"Merging {len(clip_paths)} Q&A clips...")
+    
+    if not clip_paths:
+        raise ValueError("No Q&A clips to merge.")
+
+    # Generate a better output filename based on content
+    output_filename = "qa_answer.mp4"
+    if highlight_info and len(highlight_info) > 0:
+        # Try to create a descriptive filename
+        if "description" in highlight_info[0]:
+            # Use the first description as the basis for the filename
+            desc = highlight_info[0]["description"]
+            if desc.startswith("Contains: "):
+                desc = desc[10:]  # Remove "Contains: " prefix
+            # Clean it up for a filename
+            safe_desc = re.sub(r'[^\w\s-]', '', desc).strip().replace(' ', '_')[:40]
+            output_filename = f"qa_{safe_desc}.mp4"
+    
+    # Designate output path
+    output_dir = os.path.join(OUTPUT_DIR, "qa_clips")
+    os.makedirs(output_dir, exist_ok=True)
+    output_path = os.path.join(output_dir, output_filename)
+    
+    # Load clips
+    final_clips = []
+    for cp in clip_paths:
+        try:
+            # Ensure the clips are correctly loaded as VideoFileClip
+            clip = VideoFileClip(cp)
+            final_clips.append(clip)
+            logger.info(f"Loaded Q&A clip: {cp} (duration: {clip.duration:.2f}s)")
+        except Exception as e:
+            logger.error(f"Error loading Q&A clip {cp}: {e}")
+
+    if not final_clips:
+        raise ValueError("Failed to load any Q&A clips.")
+    
+    logger.info(f"Successfully loaded {len(final_clips)} Q&A clips for merging")
+
+    try:
+        # Simple concatenation for Q&A clips
+        logger.info(f"Concatenating {len(final_clips)} Q&A clips...")
+        merged_clip = concatenate_videoclips(final_clips, method="compose")
+
+        # Write the merged video file
+        logger.info(f"Writing merged Q&A video to {output_path}...")
+        merged_clip.write_videofile(
+            output_path,
+            codec="libx264",
+            audio_codec="aac",
+            threads=4,
+            preset="medium",  # Better quality/size balance than ultrafast
+            bitrate="4000k"   # Higher quality output
+        )
+        
+        # Ensure all clips are closed to release file handles
+        merged_clip.close()
+        for clip in final_clips:
+            try:
+                clip.close()
+            except Exception as e:
+                logger.error(f"Error closing Q&A clip: {e}")
+
+        logger.info(f"Final Q&A video saved at: {output_path}")
+        return output_path
+
+    except Exception as e:
+        logger.error(f"Error during Q&A video merging: {e}")
+        
+        # Try to close all clips even if there was an error
+        for clip in final_clips:
+            try:
+                clip.close()
+            except:
+                pass
+                
+        # If merging failed but we have at least one clip, return the first one as fallback
+        if len(final_clips) >= 1:
+            logger.info("Q&A merging failed. Returning first clip as fallback.")
+            single_output = os.path.join(output_dir, "qa_single_clip.mp4")
+            try:
+                final_clips[0].write_videofile(
+                    single_output,
+                    codec="libx264",
+                    audio_codec="aac",
+                    threads=4,
+                    preset="medium",
+                )
+                final_clips[0].close()
+                return single_output
+            except Exception as e:
+                logger.error(f"Error saving Q&A fallback clip: {e}")
+                
+        raise

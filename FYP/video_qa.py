@@ -1,3 +1,475 @@
+# import os
+# import re
+# import time
+# import asyncio
+# import json
+# from logger_config import logger
+# from utils import format_timestamp
+# from retrieval import retrieve_chunks
+# from highlights import extract_highlights, merge_clips
+# from constants import OUTPUT_DIR
+# import ollama
+
+# # Add this updated function to video_qa.py
+
+# async def answer_video_question(transcript_segments, video_path, question, full_text=None, generate_clip=True):
+#     """
+#     Answer a specific question about video content and optionally generate a clip of the relevant part.
+    
+#     Args:
+#         transcript_segments: List of (start_time, end_time, text) tuples
+#         video_path: Path to the video file
+#         question: User's question about the video
+#         full_text: Optional full transcript text
+#         generate_clip: Whether to generate a video clip (default: True)
+        
+#     Returns:
+#         Dict containing answer, relevant clip path (if requested), and timestamps
+#     """
+#     start_time = time.time()
+#     logger.info(f"Processing video Q&A for question: {question}")
+    
+#     # If full text wasn't provided, create it from segments
+#     if not full_text:
+#         full_text = " ".join([seg[2] for seg in transcript_segments])
+    
+#     # Step 1: Retrieve the most relevant segments for the question
+#     retrieved_chunks = await retrieve_chunks(full_text, question, k=5)  # Increased from 3 to 5
+#     retrieved_text = "\n\n".join([chunk.page_content for chunk in retrieved_chunks])
+    
+#     # Step 2: Find the timestamp ranges for the retrieved chunks using improved matching
+#     relevant_segments = find_most_relevant_segments(transcript_segments, question, retrieved_chunks)
+    
+#     # Skip further processing if we couldn't find any relevant segments
+#     if not relevant_segments:
+#         logger.warning("No relevant segments found for the question")
+#         return {
+#             "question": question,
+#             "answer": "I'm sorry, but this video doesn't seem to contain information about your question.",
+#             "clip_path": None,
+#             "formatted_timestamps": [],
+#             "clip_title": None,
+#             "processing_time": time.time() - start_time
+#         }
+    
+#     # Optimize segments for better clip generation
+#     optimized_segments = optimize_clip_segments(relevant_segments)
+#     if optimized_segments:
+#         relevant_segments = optimized_segments
+    
+#     # Step 3: Prepare context for the LLM to answer the question
+#     timestamps_info = []
+#     for start, end, text in relevant_segments:
+#         start_fmt = format_timestamp(start)
+#         timestamps_info.append(f"[{start_fmt}] {text}")
+    
+#     context = "\n".join(timestamps_info)
+    
+#     # Add question context enhancement - look for question keywords in the full text
+#     # to improve the context for the LLM
+#     enhanced_context = enhance_question_context(question, full_text, context)
+#     if enhanced_context:
+#         context = enhanced_context
+    
+#     # Step 4: Generate the answer using Ollama with improved prompt
+#     prompt = f"""
+#     Based on the following transcript segments from a video, answer this specific question:
+    
+#     QUESTION: "{question}"
+    
+#     VIDEO TRANSCRIPT SEGMENTS:
+#     {context}
+    
+#     Please provide:
+#     1. A direct answer to the question based strictly on the video content. If the video doesn't address the question, clearly state that the video doesn't contain the answer.
+#     2. The exact timestamp ranges that are most relevant to this answer
+#     3. A descriptive title for a clip that would answer this question
+    
+#     Format your answer as a JSON object with these fields:
+#     {{
+#         "answer": "Your detailed answer here...",
+#         "relevant_timestamps": [{{
+#             "start": start_time_in_seconds,
+#             "end": end_time_in_seconds,
+#             "reason": "Why this segment answers the question"
+#         }}],
+#         "clip_title": "Concise descriptive title for this answer clip"
+#     }}
+    
+#     If the video doesn't contain an answer to the question, respond with:
+#     {{
+#         "answer": "The video doesn't address this question or contain relevant information.",
+#         "relevant_timestamps": [],
+#         "clip_title": null
+#     }}
+#     """
+    
+#     logger.info("Sending question to LLM for analysis...")
+#     response = ollama.chat(model="deepseek-r1:7b", messages=[{"role": "system", "content": prompt}])
+#     raw_content = response["message"]["content"]
+    
+#     # Extract JSON from response
+#     answer_data = None
+#     try:
+#         # Try to directly parse the response as JSON
+#         answer_data = json.loads(raw_content)
+#     except json.JSONDecodeError:
+#         # Try to extract JSON using regex
+#         logger.info("Direct JSON parsing failed, trying regex extraction...")
+#         json_match = re.search(r'\{[\s\S]*\}', raw_content)
+#         if json_match:
+#             try:
+#                 answer_data = json.loads(json_match.group(0))
+#             except json.JSONDecodeError:
+#                 logger.warning("JSON extraction failed")
+    
+#     # If JSON parsing fails, create a structured response manually
+#     if not answer_data:
+#         logger.warning("Creating structured answer manually from text response")
+#         lines = raw_content.split('\n')
+#         answer = ""
+#         timestamps = []
+#         clip_title = f"Answer to: {question}"
+        
+#         # Try to extract answer and timestamps from text
+#         in_answer = False
+#         for line in lines:
+#             if not line.strip():
+#                 continue
+                
+#             if line.startswith("1.") or "answer" in line.lower():
+#                 in_answer = True
+#                 answer = line.replace("1.", "").strip()
+#                 continue
+#             elif line.startswith("2.") or "timestamp" in line.lower():
+#                 in_answer = False
+#                 # Try to extract timestamps with regex
+#                 time_matches = re.findall(r'(\d+:\d+(?::\d+)?)', line)
+#                 if time_matches and len(time_matches) >= 2:
+#                     # Convert MM:SS or HH:MM:SS to seconds
+#                     times = []
+#                     for tm in time_matches:
+#                         parts = tm.split(':')
+#                         if len(parts) == 2:
+#                             times.append(int(parts[0]) * 60 + int(parts[1]))
+#                         elif len(parts) == 3:
+#                             times.append(int(parts[0]) * 3600 + int(parts[1]) * 60 + int(parts[2]))
+                    
+#                     if len(times) >= 2:
+#                         timestamps.append({
+#                             "start": times[0], 
+#                             "end": times[1],
+#                             "reason": "Relevant to the question"
+#                         })
+#             elif line.startswith("3.") or "title" in line.lower():
+#                 clip_title = line.replace("3.", "").strip()
+#             elif in_answer:
+#                 answer += " " + line.strip()
+        
+#         # Fallback to relevant segments if no timestamps were found
+#         if not timestamps and relevant_segments:
+#             # Use the first and last relevant segment to define a clip range
+#             start = relevant_segments[0][0]
+#             end = relevant_segments[-1][1]
+#             timestamps.append({
+#                 "start": start,
+#                 "end": end,
+#                 "reason": "Contains information relevant to the question"
+#             })
+        
+#         answer_data = {
+#             "answer": answer,
+#             "relevant_timestamps": timestamps,
+#             "clip_title": clip_title
+#         }
+    
+#     # Check if the answer indicates no relevant content
+#     if answer_data and "answer" in answer_data:
+#         answer_text = answer_data["answer"].lower()
+#         no_answer_phrases = [
+#             "doesn't address", "does not address", 
+#             "doesn't contain", "does not contain", 
+#             "no information", "no relevant information",
+#             "not mentioned", "doesn't mention", "does not mention",
+#             "not discussed", "doesn't discuss", "does not discuss"
+#         ]
+        
+#         if any(phrase in answer_text for phrase in no_answer_phrases):
+#             logger.info("LLM determined the video doesn't contain an answer")
+#             return {
+#                 "question": question,
+#                 "answer": answer_data["answer"],
+#                 "clip_path": None,
+#                 "formatted_timestamps": [],
+#                 "clip_title": None,
+#                 "processing_time": time.time() - start_time
+#             }
+    
+#     # Step 5: Generate video clips for the relevant parts (only if requested)
+#     clip_path = None
+#     if generate_clip and answer_data and "relevant_timestamps" in answer_data and answer_data["relevant_timestamps"]:
+#         # Convert timestamp data to highlight format
+#         highlights = []
+#         for ts in answer_data["relevant_timestamps"]:
+#             if "start" in ts and "end" in ts:
+#                 # Ensure the segment is at least 5 seconds long
+#                 start = float(ts["start"])
+#                 end = float(ts["end"])
+#                 if end - start < 5:
+#                     end = start + 5
+                
+#                 # Add context before and after
+#                 context_start = max(0, start - 2)  # Add 2 seconds before
+#                 context_end = end + 2  # Add 2 seconds after
+                
+#                 highlights.append({
+#                     "start": context_start,
+#                     "end": context_end,
+#                     "description": ts.get("reason", "Relevant to question")
+#                 })
+        
+#         # Generate clips if we have valid highlights
+#         if highlights:
+#             logger.info(f"Generating {len(highlights)} answer clips...")
+#             clip_paths, _ = extract_highlights(video_path, highlights)
+            
+#             if clip_paths:
+#                 # Merge the clips into a single answer video
+#                 qa_title = answer_data.get("clip_title", f"Answer: {question}")
+#                 safe_title = re.sub(r'[^\w\s-]', '', qa_title).strip().replace(' ', '_')
+                
+#                 # Create a directory for Q&A clips
+#                 qa_dir = os.path.join(OUTPUT_DIR, "qa_clips")
+#                 os.makedirs(qa_dir, exist_ok=True)
+                
+#                 # Merge all clips into one answer video
+#                 merged_path = os.path.join(qa_dir, f"{safe_title}.mp4")
+                
+#                 try:
+#                     # If only one clip, just rename it
+#                     if len(clip_paths) == 1:
+#                         import shutil
+#                         shutil.copy(clip_paths[0], merged_path)
+#                         clip_path = merged_path
+#                     else:
+#                         # Merge multiple clips
+#                         clip_path = merge_clips(clip_paths, highlights, is_reel=False)
+                        
+#                         # Copy to the qa_clips directory with the proper name
+#                         if clip_path and os.path.exists(clip_path):
+#                             import shutil
+#                             shutil.copy(clip_path, merged_path)
+#                             clip_path = merged_path
+#                 except Exception as e:
+#                     logger.error(f"Error merging answer clips: {e}")
+#     else:
+#         logger.info("Skipping clip generation as requested")
+    
+#     # Format timestamps for display
+#     formatted_timestamps = []
+#     if answer_data and "relevant_timestamps" in answer_data:
+#         for ts in answer_data["relevant_timestamps"]:
+#             if "start" in ts and "end" in ts:
+#                 start_fmt = format_timestamp(float(ts["start"]))
+#                 end_fmt = format_timestamp(float(ts["end"]))
+#                 reason = ts.get("reason", "Relevant segment")
+#                 formatted_timestamps.append(f"{start_fmt} to {end_fmt}: {reason}")
+    
+#     # Calculate processing time
+#     end_time = time.time()
+#     processing_time = end_time - start_time
+    
+#     return {
+#         "question": question,
+#         "answer": answer_data.get("answer", "Could not generate an answer from the video content."),
+#         "clip_path": clip_path,
+#         "formatted_timestamps": formatted_timestamps,
+#         "clip_title": answer_data.get("clip_title", f"Answer: {question}"),
+#         "processing_time": processing_time
+#     }
+
+
+# def find_most_relevant_segments(transcript_segments, question, retrieved_chunks):
+#     """Find the most relevant transcript segments for the question with improved matching."""
+#     import re
+#     from difflib import SequenceMatcher
+    
+#     # Extract key terms from the question (excluding stopwords)
+#     stopwords = {'the', 'and', 'is', 'of', 'to', 'a', 'in', 'that', 'it', 'with', 'for', 
+#                 'on', 'at', 'by', 'this', 'are', 'or', 'an', 'be', 'as', 'do', 'does', 
+#                 'how', 'what', 'when', 'where', 'why', 'who', 'which', 'can', 'could'}
+    
+#     # Extract key terms (min 3 chars) and exclude stopwords
+#     question_terms = set(re.findall(r'\b[a-zA-Z]{3,}\b', question.lower()))
+#     question_terms = [term for term in question_terms if term not in stopwords]
+    
+#     # If we have very few terms, lower the threshold and include 2-char terms
+#     if len(question_terms) < 2:
+#         additional_terms = set(re.findall(r'\b[a-zA-Z]{2,}\b', question.lower()))
+#         additional_terms = [term for term in additional_terms if term not in stopwords]
+#         question_terms.extend(additional_terms)
+    
+#     # Rank segments by relevance
+#     ranked_segments = []
+#     for start, end, text in transcript_segments:
+#         text_lower = text.lower()
+        
+#         # Calculate term frequency match
+#         term_matches = sum(1 for term in question_terms if term in text_lower)
+        
+#         # Calculate similarity ratio
+#         similarity = SequenceMatcher(None, question.lower(), text_lower).ratio()
+        
+#         # Calculate word overlap
+#         q_words = set(re.findall(r'\b[a-zA-Z]{3,}\b', question.lower()))
+#         t_words = set(re.findall(r'\b[a-zA-Z]{3,}\b', text_lower))
+#         overlap = len(q_words.intersection(t_words)) / max(1, len(q_words.union(t_words)))
+        
+#         # Combine scores - weigh term matches highly
+#         total_score = (term_matches * 10) + (similarity * 50) + (overlap * 40)
+        
+#         if total_score > 0:
+#             ranked_segments.append((start, end, text, total_score))
+    
+#     # Sort by score (highest first)
+#     ranked_segments.sort(key=lambda x: x[3], reverse=True)
+    
+#     # Take top segments, ensure we don't have too many
+#     top_segments = [seg[:3] for seg in ranked_segments[:8]]  # Take up to 8
+    
+#     # If we don't have any matches, fall back to retrieved chunks
+#     if not top_segments and retrieved_chunks:
+#         logger.info("No direct segment matches, falling back to chunk-based matching")
+#         for chunk in retrieved_chunks:
+#             chunk_text = chunk.page_content
+            
+#             # Try to find direct matches in transcript segments
+#             for start, end, text in transcript_segments:
+#                 if text in chunk_text or chunk_text in text:
+#                     top_segments.append((start, end, text))
+#                     continue
+                
+#                 # If direct match fails, use sequence matching
+#                 similarity = SequenceMatcher(None, chunk_text.lower(), text.lower()).ratio()
+#                 if similarity > 0.6:  # 60% similarity threshold
+#                     top_segments.append((start, end, text))
+    
+#     # Ensure we have sorted, non-duplicate segments
+#     unique_segments = []
+#     for seg in top_segments:
+#         if seg not in unique_segments:
+#             unique_segments.append(seg)
+    
+#     # Sort by timestamp
+#     unique_segments.sort(key=lambda x: x[0])
+    
+#     return unique_segments
+
+
+# def optimize_clip_segments(segments, max_gap=10, min_duration=5, max_duration=120):
+#     """Optimize clip segments by combining nearby ones and enforcing min/max durations."""
+#     if not segments:
+#         return []
+    
+#     # Sort segments by start time
+#     sorted_segs = sorted(segments, key=lambda x: x[0])
+    
+#     # Combine segments that are close to each other
+#     combined = []
+#     current_group = [sorted_segs[0]]
+    
+#     for seg in sorted_segs[1:]:
+#         prev_end = current_group[-1][1]
+#         current_start = seg[0]
+        
+#         if current_start - prev_end <= max_gap:
+#             # Merge with current group
+#             current_group.append(seg)
+#         else:
+#             # Start a new group
+#             start = current_group[0][0]
+#             end = current_group[-1][1]
+#             text = " ".join([s[2] for s in current_group])
+            
+#             # Ensure minimum duration
+#             if end - start < min_duration:
+#                 end = min(start + min_duration, start + 60)  # Cap at 60s
+            
+#             # Enforce maximum duration
+#             if end - start > max_duration:
+#                 end = start + max_duration
+                
+#             combined.append((start, end, text))
+#             current_group = [seg]
+    
+#     # Add the last group
+#     if current_group:
+#         start = current_group[0][0]
+#         end = current_group[-1][1]
+#         text = " ".join([s[2] for s in current_group])
+        
+#         # Apply duration constraints
+#         if end - start < min_duration:
+#             end = min(start + min_duration, start + 60)  # Cap at 60s
+#         if end - start > max_duration:
+#             end = start + max_duration
+            
+#         combined.append((start, end, text))
+    
+#     return combined
+
+
+# def enhance_question_context(question, full_text, current_context):
+#     """Enhance the context for a question by looking for key terms in the full text."""
+#     try:
+#         # Extract key terms from the question
+#         import re
+        
+#         # Remove stopwords
+#         stopwords = {'the', 'and', 'is', 'of', 'to', 'a', 'in', 'that', 'it', 'with', 'for', 
+#                     'on', 'at', 'by', 'this', 'are', 'or', 'an', 'be', 'as', 'do', 'does', 
+#                     'how', 'what', 'when', 'where', 'why', 'who', 'which', 'can', 'could'}
+        
+#         # Look for quotes or specific terms that might be important
+#         quoted_terms = re.findall(r'"([^"]+)"', question)
+#         specific_terms = re.findall(r'\b[A-Z][a-zA-Z]*(?:\s+[A-Z][a-zA-Z]*)*\b', question)  # Proper nouns
+        
+#         # Extract key terms (3+ chars, not in stopwords)
+#         general_terms = re.findall(r'\b[a-zA-Z]{3,}\b', question.lower())
+#         general_terms = [term for term in general_terms if term not in stopwords]
+        
+#         # If we have quoted terms or specific terms, prioritize those
+#         if quoted_terms or specific_terms:
+#             search_terms = quoted_terms + specific_terms
+#             # Look for exact matches in the full text
+#             for term in search_terms:
+#                 if term.lower() in full_text.lower():
+#                     # If found, add it to the context
+#                     # Find the sentence containing this term
+#                     sentences = re.split(r'[.!?]', full_text)
+#                     for sentence in sentences:
+#                         if term.lower() in sentence.lower():
+#                             # Add this sentence to the context if not already there
+#                             if sentence.strip() not in current_context:
+#                                 return current_context + f"\n[Additional context] {sentence.strip()}"
+        
+#         # If we didn't find exact matches for quotes/specific terms, try general terms
+#         if general_terms and len(general_terms) >= 2:  # Need at least 2 terms
+#             # Look for sentences with multiple key terms
+#             sentences = re.split(r'[.!?]', full_text)
+#             for sentence in sentences:
+#                 matched_terms = sum(1 for term in general_terms if term in sentence.lower())
+#                 if matched_terms >= 2 and sentence.strip() not in current_context:
+#                     return current_context + f"\n[Additional context] {sentence.strip()}"
+        
+#         # No enhancement needed
+#         return current_context
+#     except Exception as e:
+#         logger.error(f"Error enhancing question context: {e}")
+#         return current_context
+
+
+# Add these imports at the top of video_qa.py
 import os
 import re
 import time
@@ -6,15 +478,278 @@ import json
 from logger_config import logger
 from utils import format_timestamp
 from retrieval import retrieve_chunks
-from highlights import extract_highlights, merge_clips
+from highlights import extract_qa_clips, merge_qa_clips
 from constants import OUTPUT_DIR
 import ollama
+from sentence_transformers import SentenceTransformer
+import numpy as np
+import torch
+from functools import lru_cache
 
-# Add this updated function to video_qa.py
+# Initialize sentence transformer model (add this near the top of the file)
+# Use a singleton pattern to load the model only once
+_sentence_transformer = None
+
+def get_sentence_transformer():
+    """Get or initialize the sentence transformer model."""
+    global _sentence_transformer
+    if _sentence_transformer is None:
+        try:
+            logger.info("Loading sentence transformer model...")
+            # Choose a model - all-MiniLM-L6-v2 is a good balance of speed and accuracy
+            _sentence_transformer = SentenceTransformer('all-MiniLM-L6-v2')
+            logger.info("Sentence transformer model loaded successfully")
+        except Exception as e:
+            logger.error(f"Error loading sentence transformer: {e}")
+            logger.info("Falling back to traditional text matching methods")
+            return None
+    return _sentence_transformer
+
+@lru_cache(maxsize=128)
+def get_text_embedding(text):
+    """Get embedding for text with caching for efficiency."""
+    model = get_sentence_transformer()
+    if model is None:
+        return None
+    try:
+        # Convert text to embedding
+        return model.encode(text)
+    except Exception as e:
+        logger.error(f"Error encoding text: {e}")
+        return None
+
+def semantic_similarity_match(question, transcript_segments, top_k=10):
+    """Find semantically similar segments using sentence transformers."""
+    model = get_sentence_transformer()
+    if model is None:
+        return []  # Fall back to traditional methods if model isn't available
+    
+    try:
+        # Get question embedding
+        question_embedding = get_text_embedding(question)
+        
+        # Prepare segment texts and compute embeddings efficiently
+        segment_texts = [seg[2] for seg in transcript_segments]
+        
+        # Process in batches to avoid memory issues with large transcripts
+        batch_size = 64
+        all_similarities = []
+        
+        for i in range(0, len(segment_texts), batch_size):
+            batch_texts = segment_texts[i:i+batch_size]
+            batch_embeddings = model.encode(batch_texts)
+            
+            # Calculate cosine similarity for this batch
+            batch_similarities = np.dot(batch_embeddings, question_embedding) / (
+                np.linalg.norm(batch_embeddings, axis=1) * np.linalg.norm(question_embedding)
+            )
+            all_similarities.extend(batch_similarities)
+        
+        # Create a list of (segment, similarity) pairs
+        segment_similarities = list(zip(transcript_segments, all_similarities))
+        
+        # Sort by similarity (highest first) and take top k
+        segment_similarities.sort(key=lambda x: x[1], reverse=True)
+        
+        # Return top segments with their scores
+        top_segments = [(seg[0], seg[1], seg[2], float(score)) 
+                        for (seg, score) in segment_similarities[:top_k]
+                        if score > 0.5]  # Only keep reasonably similar segments
+        
+        logger.info(f"Found {len(top_segments)} semantically similar segments")
+        return top_segments
+        
+    except Exception as e:
+        logger.error(f"Error in semantic similarity matching: {e}")
+        return []  # Fall back to traditional methods if an error occurs
+
+def find_most_relevant_segments(transcript_segments, question, retrieved_chunks):
+    """Find the most relevant transcript segments for the question using semantic similarity."""
+    import re
+    from difflib import SequenceMatcher
+    
+    # Try semantic similarity matching first
+    semantic_matches = semantic_similarity_match(question, transcript_segments)
+    
+    if semantic_matches:
+        # Extract segments from semantic matches (ignoring the score)
+        semantic_segments = [(start, end, text) for start, end, text, _ in semantic_matches]
+        
+        # Filter out intro segments unless specifically asked about intro
+        if not any(term in question.lower() for term in ['intro', 'introduction', 'beginning', 'start']):
+            semantic_segments = [(start, end, text) for start, end, text in semantic_segments if start >= 30]
+        
+        return semantic_segments
+    
+    # If semantic matching failed or returned no results, fall back to traditional methods
+    logger.info("Falling back to traditional text matching methods")
+    
+    # Extract key terms from the question (excluding stopwords)
+    stopwords = {'the', 'and', 'is', 'of', 'to', 'a', 'in', 'that', 'it', 'with', 'for', 
+                'on', 'at', 'by', 'this', 'are', 'or', 'an', 'be', 'as', 'do', 'does', 
+                'how', 'what', 'when', 'where', 'why', 'who', 'which', 'can', 'could'}
+    
+    # Extract quoted phrases first - these are highest priority
+    quoted_phrases = re.findall(r'"([^"]+)"', question)
+    
+    # Extract key terms (min 3 chars) and exclude stopwords
+    question_terms = set(re.findall(r'\b[a-zA-Z]{3,}\b', question.lower()))
+    question_terms = [term for term in question_terms if term not in stopwords]
+    
+    # Extract proper nouns (capitalized words) - these are high priority
+    proper_nouns = re.findall(r'\b[A-Z][a-zA-Z]+\b', question)
+    
+    # Rank segments by relevance with a precision-focused algorithm
+    ranked_segments = []
+    for start, end, text in transcript_segments:
+        text_lower = text.lower()
+        
+        # Skip intro segments (first 30 seconds) unless specifically asked about introduction
+        is_intro = start < 30
+        if is_intro and not any(term in question.lower() for term in ['intro', 'introduction', 'beginning', 'start']):
+            continue
+        
+        # Calculate quoted phrase matches (highest priority)
+        quoted_matches = 0
+        for phrase in quoted_phrases:
+            if phrase.lower() in text_lower:
+                quoted_matches += 3  # Very high weight
+        
+        # Calculate proper noun matches (high priority)
+        proper_matches = 0
+        for noun in proper_nouns:
+            if noun.lower() in text_lower:
+                proper_matches += 2  # High weight
+        
+        # Calculate term frequency match
+        term_matches = sum(1 for term in question_terms if term in text_lower)
+        
+        # Calculate similarity ratio
+        similarity = SequenceMatcher(None, question.lower(), text_lower).ratio()
+        
+        # Calculate word overlap
+        q_words = set(re.findall(r'\b[a-zA-Z]{3,}\b', question.lower()))
+        t_words = set(re.findall(r'\b[a-zA-Z]{3,}\b', text_lower))
+        if len(q_words) > 0:
+            overlap = len(q_words.intersection(t_words)) / len(q_words)  # Focus on question coverage
+        else:
+            overlap = 0
+        
+        # Combine scores with a precision-focused weighting
+        total_score = (quoted_matches * 30) + (proper_matches * 20) + (term_matches * 10) + (similarity * 40) + (overlap * 60)
+        
+        # Only include segments with a minimum relevance
+        if total_score > 20:  # Higher threshold for more precision
+            ranked_segments.append((start, end, text, total_score))
+    
+    # Sort by score (highest first)
+    ranked_segments.sort(key=lambda x: x[3], reverse=True)
+    
+    # Take only the most relevant segments
+    top_segments = [seg[:3] for seg in ranked_segments[:5]]  # Limit to top 5
+    
+    # If we have at least some good matches, do not fall back to weaker matches
+    if len(top_segments) >= 2:
+        # We have enough good segments
+        pass
+    elif len(top_segments) == 1 and ranked_segments[0][3] > 50:
+        # We have one very strong match
+        pass
+    # Only fall back to retrieved chunks if we don't have strong matches
+    elif not top_segments and retrieved_chunks:
+        logger.info("No direct segment matches, falling back to chunk-based matching")
+        for chunk in retrieved_chunks:
+            chunk_text = chunk.page_content
+            
+            # Skip the fallback if it seems to be from the introduction
+            intro_indicators = ['welcome', 'today we', 'in this video', 'going to talk', 'i\'m going to']
+            if any(indicator in chunk_text.lower() for indicator in intro_indicators):
+                continue
+                
+            # Try to find direct matches in transcript segments
+            for start, end, text in transcript_segments:
+                # Skip intro segments
+                if start < 30 and not any(term in question.lower() for term in ['intro', 'introduction', 'beginning', 'start']):
+                    continue
+                    
+                if text in chunk_text or chunk_text in text:
+                    top_segments.append((start, end, text))
+                    continue
+                
+                # If direct match fails, use sequence matching with higher threshold
+                similarity = SequenceMatcher(None, chunk_text.lower(), text.lower()).ratio()
+                if similarity > 0.7:  # 70% similarity threshold for more precision
+                    top_segments.append((start, end, text))
+    
+    # Ensure we have sorted, non-duplicate segments
+    unique_segments = []
+    for seg in top_segments:
+        if seg not in unique_segments:
+            unique_segments.append(seg)
+    
+    # Sort by timestamp
+    unique_segments.sort(key=lambda x: x[0])
+    
+    return unique_segments
+
+
+def optimize_clip_segments(segments, max_gap=5, min_duration=3, max_duration=60):
+    """Optimize clip segments by combining nearby ones and enforcing min/max durations with precision focus."""
+    if not segments:
+        return []
+    
+    # Sort segments by start time
+    sorted_segs = sorted(segments, key=lambda x: x[0])
+    
+    # Combine segments that are close to each other with a smaller gap threshold
+    combined = []
+    current_group = [sorted_segs[0]]
+    
+    for seg in sorted_segs[1:]:
+        prev_end = current_group[-1][1]
+        current_start = seg[0]
+        
+        if current_start - prev_end <= max_gap:
+            # Merge with current group
+            current_group.append(seg)
+        else:
+            # Start a new group
+            start = current_group[0][0]
+            end = current_group[-1][1]
+            text = " ".join([s[2] for s in current_group])
+            
+            # Ensure minimum duration
+            if end - start < min_duration:
+                end = min(start + min_duration, start + 15)  # Cap at 15s for short clips
+            
+            # Enforce maximum duration - more strict for precision
+            if end - start > max_duration:
+                end = start + max_duration
+                
+            combined.append((start, end, text))
+            current_group = [seg]
+    
+    # Add the last group
+    if current_group:
+        start = current_group[0][0]
+        end = current_group[-1][1]
+        text = " ".join([s[2] for s in current_group])
+        
+        # Apply duration constraints
+        if end - start < min_duration:
+            end = min(start + min_duration, start + 15)
+        if end - start > max_duration:
+            end = start + max_duration
+            
+        combined.append((start, end, text))
+    
+    return combined
+
 
 async def answer_video_question(transcript_segments, video_path, question, full_text=None, generate_clip=True):
     """
     Answer a specific question about video content and optionally generate a clip of the relevant part.
+    Uses semantic matching for finding relevant segments and extracts timestamps directly from transcript.
     
     Args:
         transcript_segments: List of (start_time, end_time, text) tuples
@@ -34,54 +769,40 @@ async def answer_video_question(transcript_segments, video_path, question, full_
         full_text = " ".join([seg[2] for seg in transcript_segments])
     
     # Step 1: Retrieve the most relevant segments for the question
-    retrieved_chunks = await retrieve_chunks(full_text, question, k=3)
+    retrieved_chunks = await retrieve_chunks(full_text, question, k=5)
     retrieved_text = "\n\n".join([chunk.page_content for chunk in retrieved_chunks])
     
-    # Step 2: Find the timestamp ranges for the retrieved chunks
-    relevant_segments = []
-    for chunk in retrieved_chunks:
-        chunk_text = chunk.page_content
-        
-        # Find matching segments in the transcript
-        matching_segments = []
-        for start, end, text in transcript_segments:
-            if text in chunk_text or chunk_text in text:
-                matching_segments.append((start, end, text))
-        
-        # If direct match fails, try fuzzy matching with sliding window
-        if not matching_segments:
-            for i, (start, end, text) in enumerate(transcript_segments):
-                # Try a window of 3 segments
-                if i + 2 < len(transcript_segments):
-                    combined_text = " ".join([transcript_segments[i+j][2] for j in range(3)])
-                    if chunk_text in combined_text:
-                        for j in range(3):
-                            if i+j < len(transcript_segments):
-                                s, e, t = transcript_segments[i+j]
-                                matching_segments.append((s, e, t))
-        
-        # Add unique matching segments to our results
-        for seg in matching_segments:
-            if seg not in relevant_segments:
-                relevant_segments.append(seg)
+    # Step 2: Find the timestamp ranges using semantic similarity matching
+    relevant_segments = find_most_relevant_segments(transcript_segments, question, retrieved_chunks)
     
-    # Sort segments by start time
-    relevant_segments.sort(key=lambda x: x[0])
+    # Skip further processing if we couldn't find any relevant segments
+    if not relevant_segments:
+        logger.warning("No relevant segments found for the question")
+        return {
+            "question": question,
+            "answer": "I'm sorry, but this video doesn't seem to contain information about your question.",
+            "clip_path": None,
+            "formatted_timestamps": [],
+            "clip_title": None,
+            "processing_time": time.time() - start_time
+        }
+    
+    # Optimize segments for better clip generation
+    optimized_segments = optimize_clip_segments(relevant_segments)
+    if optimized_segments:
+        relevant_segments = optimized_segments
     
     # Step 3: Prepare context for the LLM to answer the question
-    if relevant_segments:
-        timestamps_info = []
-        for start, end, text in relevant_segments:
-            start_fmt = format_timestamp(start)
-            timestamps_info.append(f"[{start_fmt}] {text}")
-        
-        context = "\n".join(timestamps_info)
-    else:
-        context = retrieved_text
+    timestamps_info = []
+    for start, end, text in relevant_segments:
+        start_fmt = format_timestamp(start)
+        timestamps_info.append(f"[{start_fmt}] {text}")
     
-    # Step 4: Generate the answer using Ollama
+    context = "\n".join(timestamps_info)
+    
+    # Step 4: Generate ONLY the answer and title using Ollama (not timestamps)
     prompt = f"""
-    Based on the following transcript segments from a video, answer this question:
+    Based on the following transcript segments from a video, answer this specific question:
     
     QUESTION: "{question}"
     
@@ -89,19 +810,19 @@ async def answer_video_question(transcript_segments, video_path, question, full_
     {context}
     
     Please provide:
-    1. A direct answer to the question based strictly on the video content
-    2. The timestamp ranges that are most relevant to this answer
-    3. A title for a clip that would answer this question
+    1. A direct answer to the question based strictly on the video content. If the video doesn't address the question, clearly state that the video doesn't contain the answer.
+    2. A descriptive title for a clip that would answer this question (keep it under 40 characters)
     
     Format your answer as a JSON object with these fields:
     {{
         "answer": "Your detailed answer here...",
-        "relevant_timestamps": [{{
-            "start": start_time_in_seconds,
-            "end": end_time_in_seconds,
-            "reason": "Why this segment answers the question"
-        }}],
         "clip_title": "Concise descriptive title for this answer clip"
+    }}
+    
+    If the video doesn't contain an answer to the question, respond with:
+    {{
+        "answer": "The video doesn't address this question or contain relevant information.",
+        "clip_title": null
     }}
     """
     
@@ -129,127 +850,128 @@ async def answer_video_question(transcript_segments, video_path, question, full_
         logger.warning("Creating structured answer manually from text response")
         lines = raw_content.split('\n')
         answer = ""
-        timestamps = []
         clip_title = f"Answer to: {question}"
         
-        # Try to extract answer and timestamps from text
+        # Try to extract answer and title from text
         in_answer = False
         for line in lines:
+            if not line.strip():
+                continue
+                
             if line.startswith("1.") or "answer" in line.lower():
                 in_answer = True
                 answer = line.replace("1.", "").strip()
                 continue
-            elif line.startswith("2.") or "timestamp" in line.lower():
+            elif line.startswith("2.") or "title" in line.lower():
                 in_answer = False
-                # Try to extract timestamps with regex
-                time_matches = re.findall(r'(\d+:\d+)', line)
-                if time_matches and len(time_matches) >= 2:
-                    # Convert MM:SS to seconds
-                    times = []
-                    for tm in time_matches:
-                        parts = tm.split(':')
-                        if len(parts) == 2:
-                            times.append(int(parts[0]) * 60 + int(parts[1]))
-                    
-                    if len(times) >= 2:
-                        timestamps.append({
-                            "start": times[0], 
-                            "end": times[1],
-                            "reason": "Relevant to the question"
-                        })
-            elif line.startswith("3.") or "title" in line.lower():
-                clip_title = line.replace("3.", "").strip()
+                clip_title = line.replace("2.", "").strip()
             elif in_answer:
                 answer += " " + line.strip()
         
-        # Fallback to relevant segments if no timestamps were found
-        if not timestamps and relevant_segments:
-            # Use the first and last relevant segment to define a clip range
-            start = relevant_segments[0][0]
-            end = relevant_segments[-1][1]
-            timestamps.append({
-                "start": start,
-                "end": end,
-                "reason": "Contains information relevant to the question"
-            })
-        
         answer_data = {
             "answer": answer,
-            "relevant_timestamps": timestamps,
             "clip_title": clip_title
         }
     
-    # Step 5: Generate video clips for the relevant parts (only if requested)
-    clip_path = None
-    if generate_clip and answer_data and "relevant_timestamps" in answer_data and answer_data["relevant_timestamps"]:
-        # Convert timestamp data to highlight format
-        highlights = []
-        for ts in answer_data["relevant_timestamps"]:
-            if "start" in ts and "end" in ts:
-                # Ensure the segment is at least 5 seconds long
-                start = float(ts["start"])
-                end = float(ts["end"])
-                if end - start < 5:
-                    end = start + 5
-                
-                highlights.append({
-                    "start": start,
-                    "end": end,
-                    "description": ts.get("reason", "Relevant to question")
-                })
+    # Check if the answer indicates no relevant content
+    if answer_data and "answer" in answer_data:
+        answer_text = answer_data["answer"].lower()
+        no_answer_phrases = [
+            "doesn't address", "does not address", 
+            "doesn't contain", "does not contain", 
+            "no information", "no relevant information",
+            "not mentioned", "doesn't mention", "does not mention",
+            "not discussed", "doesn't discuss", "does not discuss"
+        ]
         
-        # Generate clips if we have valid highlights
-        if highlights:
-            logger.info(f"Generating {len(highlights)} answer clips...")
-            clip_paths, _ = extract_highlights(video_path, highlights)
-            
-            if clip_paths:
-                # Merge the clips into a single answer video
-                qa_title = answer_data.get("clip_title", f"Answer: {question}")
-                safe_title = re.sub(r'[^\w\s-]', '', qa_title).strip().replace(' ', '_')
-                
-                # Create a directory for Q&A clips
-                qa_dir = os.path.join(OUTPUT_DIR, "qa_clips")
-                os.makedirs(qa_dir, exist_ok=True)
-                
-                # Merge all clips into one answer video
-                merged_path = os.path.join(qa_dir, f"{safe_title}.mp4")
-                
-                try:
-                    # If only one clip, just rename it
-                    if len(clip_paths) == 1:
-                        import shutil
-                        shutil.copy(clip_paths[0], merged_path)
-                        clip_path = merged_path
-                    else:
-                        # Merge multiple clips
-                        clip_path = merge_clips(clip_paths, highlights, is_reel=False)
-                        
-                        # Copy to the qa_clips directory with the proper name
-                        if clip_path and os.path.exists(clip_path):
-                            import shutil
-                            shutil.copy(clip_path, merged_path)
-                            clip_path = merged_path
-                except Exception as e:
-                    logger.error(f"Error merging answer clips: {e}")
-    else:
-        logger.info("Skipping clip generation as requested")
+        if any(phrase in answer_text for phrase in no_answer_phrases):
+            logger.info("LLM determined the video doesn't contain an answer")
+            return {
+                "question": question,
+                "answer": answer_data["answer"],
+                "clip_path": None,
+                "formatted_timestamps": [],
+                "clip_title": None,
+                "processing_time": time.time() - start_time
+            }
     
-    # Format timestamps for display
+    # Step 5: Create highlights directly from the relevant segments (not from LLM)
     formatted_timestamps = []
-    if answer_data and "relevant_timestamps" in answer_data:
-        for ts in answer_data["relevant_timestamps"]:
-            if "start" in ts and "end" in ts:
-                start_fmt = format_timestamp(float(ts["start"]))
-                end_fmt = format_timestamp(float(ts["end"]))
-                reason = ts.get("reason", "Relevant segment")
-                formatted_timestamps.append(f"{start_fmt} to {end_fmt}: {reason}")
+    highlights = []
+    
+    for start, end, text in relevant_segments:
+        # Skip segments that are too short or in the intro (unless specifically asked about intro)
+        if end - start < 3:
+            continue
+            
+        if start < 30 and not any(term in question.lower() for term in ['intro', 'introduction', 'beginning', 'start']):
+            continue
+            
+        # Format for display
+        start_fmt = format_timestamp(start)
+        end_fmt = format_timestamp(end)
+        
+        # Create abbreviated description from the segment text
+        short_desc = text[:80] + "..." if len(text) > 80 else text
+        reason = f"Contains: {short_desc}"
+        
+        formatted_timestamps.append(f"{start_fmt} to {end_fmt}: {reason}")
+        
+        # Add to highlights for clip generation
+        # Add minimal context before and after
+        context_start = max(0, start - 1)  # Add just 1 second before
+        context_end = min(end + 1, end + 60)  # Add just 1 second after, cap at 60 seconds
+        
+        highlights.append({
+            "start": context_start,
+            "end": context_end,
+            "description": reason
+        })
+    
+    # Step 6: Generate video clips (only if requested and we have highlights)
+    clip_path = None
+    if generate_clip and highlights:
+        logger.info(f"Generating {len(highlights)} precise answer clips...")
+        clip_paths, highlight_info = extract_qa_clips(video_path, highlights)
+        
+        if clip_paths:
+            # Merge the clips into a single answer video
+            qa_title = answer_data.get("clip_title", f"Answer: {question}")
+            safe_title = re.sub(r'[^\w\s-]', '', qa_title).strip().replace(' ', '_')
+            
+            # Create a directory for Q&A clips
+            qa_dir = os.path.join(OUTPUT_DIR, "qa_clips")
+            os.makedirs(qa_dir, exist_ok=True)
+            
+            # Merge all clips into one answer video
+            merged_path = os.path.join(qa_dir, f"{safe_title[:40]}.mp4")
+            
+            try:
+                # If only one clip, just rename it
+                if len(clip_paths) == 1:
+                    import shutil
+                    shutil.copy(clip_paths[0], merged_path)
+                    clip_path = merged_path
+                else:
+                    # Merge multiple clips
+                    clip_path = merge_qa_clips(clip_paths, highlight_info, is_reel=False)
+                    
+                    # Copy to the qa_clips directory with the proper name
+                    if clip_path and os.path.exists(clip_path):
+                        import shutil
+                        shutil.copy(clip_path, merged_path)
+                        clip_path = merged_path
+            except Exception as e:
+                logger.error(f"Error merging answer clips: {e}")
+    else:
+        logger.info("Skipping clip generation as requested or no segments found")
     
     # Calculate processing time
     end_time = time.time()
     processing_time = end_time - start_time
     
-    return {
+    # Create the final result
+    result = {
         "question": question,
         "answer": answer_data.get("answer", "Could not generate an answer from the video content."),
         "clip_path": clip_path,
@@ -257,113 +979,13 @@ async def answer_video_question(transcript_segments, video_path, question, full_
         "clip_title": answer_data.get("clip_title", f"Answer: {question}"),
         "processing_time": processing_time
     }
-
-async def generate_faq(transcript_segments, video_info):
-    """
-    Generate common questions and answers about the video content.
     
-    Args:
-        transcript_segments: List of (start_time, end_time, text) tuples
-        video_info: Dictionary with video metadata
-        
-    Returns:
-        List of question-answer pairs
-    """
-    # Extract full text from transcript
-    full_text = " ".join([seg[2] for seg in transcript_segments])
+    # Add diagnostic info for debugging
+    diagnostics = {
+        "num_semantic_segments": len(relevant_segments),
+        "num_highlights": len(highlights),
+        "avg_segment_duration": sum((end-start) for start, end, _ in relevant_segments) / max(1, len(relevant_segments))
+    }
+    result["diagnostics"] = diagnostics
     
-    # Create a prompt for generating FAQ
-    prompt = f"""
-    Based on this video transcript, generate 5 frequently asked questions (FAQ) that viewers might have.
-    
-    VIDEO TITLE: {video_info.get('title', 'Unknown')}
-    VIDEO DESCRIPTION: {video_info.get('description', 'No description')}
-    
-    TRANSCRIPT EXCERPT:
-    {full_text[:3000]}... [truncated]
-    
-    For each question:
-    1. The question should be specific to the content
-    2. It should target important or interesting information from the video
-    3. Provide a concise, accurate answer based solely on the transcript
-    
-    Return the results in this JSON format:
-    {{
-        "faq": [
-            {{
-                "question": "First question here?",
-                "answer": "Answer to first question"
-            }},
-            ...
-        ]
-    }}
-    """
-    
-    logger.info("Generating FAQ for video content...")
-    response = ollama.chat(model="deepseek-r1:7b", messages=[{"role": "system", "content": prompt}])
-    raw_content = response["message"]["content"]
-    
-    # Extract JSON from response
-    faq_data = None
-    try:
-        # Try to directly parse the response as JSON
-        faq_data = json.loads(raw_content)
-    except json.JSONDecodeError:
-        # Try to extract JSON using regex
-        logger.info("Direct JSON parsing failed, trying regex extraction...")
-        json_match = re.search(r'\{[\s\S]*\}', raw_content)
-        if json_match:
-            try:
-                faq_data = json.loads(json_match.group(0))
-            except json.JSONDecodeError:
-                logger.warning("JSON extraction failed")
-    
-    # If JSON parsing fails, create a structured response manually
-    if not faq_data or "faq" not in faq_data:
-        logger.warning("Creating structured FAQ manually from text response")
-        faq_list = []
-        
-        # Try to extract Q&A pairs from text
-        lines = raw_content.split('\n')
-        current_question = None
-        current_answer = ""
-        
-        for line in lines:
-            line = line.strip()
-            if not line:
-                continue
-                
-            # Check if line starts with number followed by question mark
-            q_match = re.match(r'^(\d+[\)\.])?\s*(.+\?)', line)
-            if q_match:
-                # Save previous Q&A pair if exists
-                if current_question and current_answer:
-                    faq_list.append({
-                        "question": current_question,
-                        "answer": current_answer.strip()
-                    })
-                    current_answer = ""
-                
-                # New question
-                current_question = q_match.group(2).strip()
-            elif current_question and not current_answer and ":" in line:
-                # Handle "Q: question" format
-                parts = line.split(":", 1)
-                if parts[0].strip().lower() in ["q", "question"]:
-                    current_question = parts[1].strip()
-                elif parts[0].strip().lower() in ["a", "answer"]:
-                    current_answer = parts[1].strip()
-            elif current_question:
-                # Collect answer lines
-                current_answer += " " + line
-        
-        # Add the last Q&A pair
-        if current_question and current_answer:
-            faq_list.append({
-                "question": current_question,
-                "answer": current_answer.strip()
-            })
-        
-        faq_data = {"faq": faq_list}
-    
-    return faq_data.get("faq", [])
+    return result

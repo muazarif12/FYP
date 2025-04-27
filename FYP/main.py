@@ -11,7 +11,8 @@ import asyncio
 import time
 from meeting_minutes import generate_meeting_minutes, save_meeting_minutes, format_minutes_for_display
 from dubbing import create_english_dub
-from video_qa import answer_video_question, generate_faq
+from video_qa import answer_video_question
+from study_guide import generate_faq
 from subtitling import adjust_subtitle_timing_by_offset, create_english_subtitles, embed_subtitles_in_video
 from algorithmic_highlights import generate_highlights_algorithmically
 import tkinter as tk
@@ -298,6 +299,7 @@ Available Features:
 ✓ Reels - Create short-form content for social media
 ✓ Meeting Minutes - Generate professional notes from meetings
 ✓ Custom Questions - Ask anything about the video content
+✓ Interactive Questions - Ask anything about the video content with the prefix Interactive Q/A or extract clips
 
 Try saying "meeting minutes" to generate notes for a meeting recording!
 """
@@ -385,6 +387,13 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
         elif re.search(r'english dub|dub|dubbing|voice over|translate audio|translate voice', user_input.lower()):
             query_type = "english_dub"
         
+        # Add this near other query_type detection patterns in the while True loop
+        elif re.search(r'^(extract\s+clips?|extracting\s+clips?|interactive(\s+q/?a)?|video\s+q/?a|create\s+clips?|find\s+clips?|clip\s+extract|get\s+clips?|show\s+clips?|video\s+answer|answer\s+with\s+clip)s?:?', user_input, re.IGNORECASE):
+            query_type = "interactive_qa"
+            # Extract the actual question by removing the trigger phrase
+            actual_question = re.sub(r'^(extract\s+clips?|extracting\s+clips?|interactive(\s+q/?a)?|video\s+q/?a|create\s+clips?|find\s+clips?|clip\s+extract|get\s+clips?|show\s+clips?|video\s+answer|answer\s+with\s+clip)s?:?\s*', '', user_input, flags=re.IGNORECASE)
+
+
         # First check for highlight-related requests since they can overlap with other patterns
         elif re.search(r'highlight|best parts|important parts', user_input.lower()):
             # Extract duration information if explicitly specified
@@ -473,6 +482,39 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
                             print("... (script continues)")
                 else:
                     print("Sorry, I couldn't generate a podcast for this video. Please try again.")
+
+
+        # Add this where you handle other query types in the main.py while loop
+        elif query_type == "interactive_qa":
+            # Extract the actual question
+            actual_question = re.sub(r'^(extract clips|interactive q/?a):\s*', '', user_input, flags=re.IGNORECASE)
+            
+            print(f"Processing interactive Q&A for: {actual_question}")
+            
+            # Call the answer_video_question function from video_qa.py
+            qa_result = await answer_video_question(
+                transcript_segments, 
+                downloaded_file, 
+                actual_question, 
+                full_text=" ".join([seg[2] for seg in transcript_segments]),
+                generate_clip=True
+            )
+            
+            # Display the answer
+            print(f"\nAnswer: {qa_result['answer']}")
+            
+            # Display timestamps
+            if qa_result['formatted_timestamps']:
+                print("\nRelevant parts of the video:")
+                for ts in qa_result['formatted_timestamps']:
+                    print(f"• {ts}")
+            
+            # Display clip information
+            if qa_result['clip_path']:
+                print(f"\nClip generated: {qa_result['clip_path']}")
+                print(f"Clip title: {qa_result['clip_title']}")
+            else:
+                print("\nNo clip could be generated. The video may not contain relevant information.")
 
         elif query_type == "english_subtitles":
             print(f"Creating subtitles for your video. This may take some time...")
@@ -768,7 +810,8 @@ VidSense Commands:
 - "english dub": Create English-dubbed version of non-English videos
 - "english subtitles": Add English subtitles to non-English video
 - "faq": Generate frequently asked questions about the video
-- Ask specific questions like "What did they say about X?" (creates answer clip)
+- Ask specific questions like "What did they say about X?"
+- "Interactive Q/A: your question" or "Extract clips: your question": Ask a question and get an answer with relevant video clips
 - For text-only answers: Add "text only" before your question
 - "help": Show this help message
 - "quit": Exit the application
