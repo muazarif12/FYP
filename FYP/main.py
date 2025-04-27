@@ -386,7 +386,7 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
             query_type = "english_dub"
         
         # First check for highlight-related requests since they can overlap with other patterns
-        elif re.search(r'highlight|best parts|important parts|generate', user_input.lower()):
+        elif re.search(r'highlight|best parts|important parts', user_input.lower()):
             # Extract duration information if explicitly specified
             duration_match = re.search(r'(\d+)\s*(minute|min|minutes|second|sec|seconds)', user_input.lower())
 
@@ -399,7 +399,7 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
                     target_duration = amount
                 query_type = "custom_duration_highlights"
             # Check for custom instructions in the request
-            elif re.search(r'(keep|include|focus on|select|show|add|include|take|at timestamp|first moment|last moment|beginning|end|intro|conclusion)', user_input.lower()):
+            elif re.search(r'(where|ensure|keep|include|focus on|select|show|add|include|take|at timestamp|first moment|last moment|beginning|end|intro|conclusion)', user_input.lower()):
                 query_type = "custom_prompt_highlights"
             else:
                 query_type = "highlights"
