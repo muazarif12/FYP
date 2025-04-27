@@ -693,15 +693,38 @@ def find_most_relevant_segments(transcript_segments, question, retrieved_chunks)
     return unique_segments
 
 
-def optimize_clip_segments(segments, max_gap=5, min_duration=3, max_duration=60):
-    """Optimize clip segments by combining nearby ones and enforcing min/max durations with precision focus."""
+def optimize_clip_segments(segments, transcript_segments, max_gap=5, min_duration=8, max_duration=90):
+    """
+    Optimize clip segments by combining nearby ones and enforcing min/max durations.
+    Ensures clips include complete sentences and natural pauses.
+    
+    Args:
+        segments: List of (start, end, text) segments to optimize
+        transcript_segments: Full list of transcript segments for context
+        max_gap: Maximum gap between segments to merge
+        min_duration: Minimum duration for a segment
+        max_duration: Maximum duration for a segment
+    """
     if not segments:
         return []
     
     # Sort segments by start time
     sorted_segs = sorted(segments, key=lambda x: x[0])
     
-    # Combine segments that are close to each other with a smaller gap threshold
+    # Find natural breakpoints in the transcript (sentence ends, pauses)
+    natural_breaks = []
+    for i, (start, end, text) in enumerate(transcript_segments):
+        # Check if this segment ends with a sentence-ending punctuation
+        if re.search(r'[.!?]\s*$', text):
+            natural_breaks.append(end)
+        
+        # Check if there's a gap after this segment (indicating a pause)
+        if i < len(transcript_segments) - 1:
+            next_start = transcript_segments[i+1][0]
+            if next_start - end > 0.7:  # Pause of 0.7 seconds or more
+                natural_breaks.append(end)
+    
+    # Combine segments that are close to each other
     combined = []
     current_group = [sorted_segs[0]]
     
@@ -718,15 +741,18 @@ def optimize_clip_segments(segments, max_gap=5, min_duration=3, max_duration=60)
             end = current_group[-1][1]
             text = " ".join([s[2] for s in current_group])
             
-            # Ensure minimum duration
-            if end - start < min_duration:
-                end = min(start + min_duration, start + 15)  # Cap at 15s for short clips
+            # Expand to include complete sentences by finding natural breakpoints
+            expanded_end = find_natural_endpoint(end, natural_breaks, transcript_segments, max_duration)
             
-            # Enforce maximum duration - more strict for precision
-            if end - start > max_duration:
-                end = start + max_duration
+            # Ensure minimum duration
+            if expanded_end - start < min_duration:
+                expanded_end = max(start + min_duration, expanded_end)
+            
+            # Enforce maximum duration
+            if expanded_end - start > max_duration:
+                expanded_end = start + max_duration
                 
-            combined.append((start, end, text))
+            combined.append((start, expanded_end, text))
             current_group = [seg]
     
     # Add the last group
@@ -735,21 +761,63 @@ def optimize_clip_segments(segments, max_gap=5, min_duration=3, max_duration=60)
         end = current_group[-1][1]
         text = " ".join([s[2] for s in current_group])
         
+        # Expand to include complete sentences
+        expanded_end = find_natural_endpoint(end, natural_breaks, transcript_segments, max_duration)
+        
         # Apply duration constraints
-        if end - start < min_duration:
-            end = min(start + min_duration, start + 15)
-        if end - start > max_duration:
-            end = start + max_duration
+        if expanded_end - start < min_duration:
+            expanded_end = max(start + min_duration, expanded_end)
+        if expanded_end - start > max_duration:
+            expanded_end = start + max_duration
             
-        combined.append((start, end, text))
+        combined.append((start, expanded_end, text))
     
     return combined
+
+def find_natural_endpoint(current_end, natural_breaks, transcript_segments, max_duration, lookahead=15):
+    """
+    Find a natural endpoint for a clip by looking for natural breaks.
+    
+    Args:
+        current_end: Current end time of the segment
+        natural_breaks: List of timestamps where natural breaks occur
+        transcript_segments: Full list of transcript segments
+        max_duration: Maximum allowed extension
+        lookahead: How far ahead to look for a natural break (in seconds)
+        
+    Returns:
+        Adjusted end time at a natural pause or sentence break
+    """
+    # Find the next natural break after current_end
+    future_breaks = [b for b in natural_breaks if b > current_end and b <= current_end + lookahead]
+    
+    if future_breaks:
+        # Find the closest natural break
+        return min(future_breaks)
+    
+    # If no natural breaks found, try to find the end of the current sentence in transcript
+    for start, end, text in transcript_segments:
+        # If this segment contains our current endpoint
+        if start <= current_end <= end:
+            # If it ends with sentence-ending punctuation, use the segment end
+            if re.search(r'[.!?]\s*$', text):
+                return end
+            
+            # Otherwise find the next segment that ends a sentence
+            segment_index = transcript_segments.index((start, end, text))
+            for i in range(segment_index+1, min(segment_index+5, len(transcript_segments))):
+                next_start, next_end, next_text = transcript_segments[i]
+                if re.search(r'[.!?]\s*$', next_text) and next_end <= current_end + lookahead:
+                    return next_end
+    
+    # If no good breakpoint found, just add a small buffer
+    return current_end + 2  # Add 2 seconds buffer
 
 
 async def answer_video_question(transcript_segments, video_path, question, full_text=None, generate_clip=True):
     """
-    Answer a specific question about video content and optionally generate a clip of the relevant part.
-    Uses semantic matching for finding relevant segments and extracts timestamps directly from transcript.
+    Answer a specific question about video content and generate clips with complete thoughts/sentences.
+    Uses semantic matching for finding relevant segments and ensures natural speech boundaries.
     
     Args:
         transcript_segments: List of (start_time, end_time, text) tuples
@@ -787,8 +855,11 @@ async def answer_video_question(transcript_segments, video_path, question, full_
             "processing_time": time.time() - start_time
         }
     
-    # Optimize segments for better clip generation
-    optimized_segments = optimize_clip_segments(relevant_segments)
+    # Optimize segments for better clip generation - now includes natural speech boundaries
+    optimized_segments = optimize_clip_segments(relevant_segments, transcript_segments, 
+                                               min_duration=8,   # Longer minimum to include full thoughts
+                                               max_duration=90)  # Longer maximum for complete sentences
+    
     if optimized_segments:
         relevant_segments = optimized_segments
     
@@ -901,7 +972,7 @@ async def answer_video_question(transcript_segments, video_path, question, full_
     
     for start, end, text in relevant_segments:
         # Skip segments that are too short or in the intro (unless specifically asked about intro)
-        if end - start < 3:
+        if end - start < 5:  # Increased minimum to avoid too-short clips
             continue
             
         if start < 30 and not any(term in question.lower() for term in ['intro', 'introduction', 'beginning', 'start']):
@@ -917,22 +988,33 @@ async def answer_video_question(transcript_segments, video_path, question, full_
         
         formatted_timestamps.append(f"{start_fmt} to {end_fmt}: {reason}")
         
-        # Add to highlights for clip generation
-        # Add minimal context before and after
-        context_start = max(0, start - 1)  # Add just 1 second before
-        context_end = min(end + 1, end + 60)  # Add just 1 second after, cap at 60 seconds
-        
+        # Add to highlights for clip generation with expanded context for complete sentences
         highlights.append({
-            "start": context_start,
-            "end": context_end,
+            "start": start,
+            "end": end,
             "description": reason
         })
+    
+    # Ensure we have substantial duration
+    total_highlight_duration = sum(h["end"] - h["start"] for h in highlights)
+    if total_highlight_duration < 5 and highlights:
+        # If highlights are too short, try to expand them
+        for h in highlights:
+            # Find nearby transcript segments to expand this highlight
+            for ts_start, ts_end, ts_text in transcript_segments:
+                # If this transcript segment is close to our highlight
+                if abs(ts_start - h["end"]) < 3 or abs(ts_end - h["start"]) < 3:
+                    # Expand highlight to include this segment
+                    h["start"] = min(h["start"], ts_start)
+                    h["end"] = max(h["end"], ts_end)
     
     # Step 6: Generate video clips (only if requested and we have highlights)
     clip_path = None
     if generate_clip and highlights:
-        logger.info(f"Generating {len(highlights)} precise answer clips...")
-        clip_paths, highlight_info = extract_qa_clips(video_path, highlights)
+        logger.info(f"Generating {len(highlights)} Q&A clips with complete sentences...")
+        
+        # Pass transcript_segments to ensure natural speech boundaries
+        clip_paths, highlight_info = extract_qa_clips(video_path, highlights, transcript_segments)
         
         if clip_paths:
             # Merge the clips into a single answer video
@@ -953,19 +1035,28 @@ async def answer_video_question(transcript_segments, video_path, question, full_
                     shutil.copy(clip_paths[0], merged_path)
                     clip_path = merged_path
                 else:
-                    # Merge multiple clips
+                    # Merge multiple clips without transitions
                     clip_path = merge_qa_clips(clip_paths, highlight_info, is_reel=False)
                     
-                    # Copy to the qa_clips directory with the proper name
-                    if clip_path and os.path.exists(clip_path):
+                    # Copy to the qa_clips directory with the proper name if needed
+                    if clip_path and os.path.exists(clip_path) and clip_path != merged_path:
                         import shutil
                         shutil.copy(clip_path, merged_path)
                         clip_path = merged_path
             except Exception as e:
                 logger.error(f"Error merging answer clips: {e}")
+                
+                # Fallback to first clip if merge fails
+                if clip_paths:
+                    import shutil
+                    try:
+                        shutil.copy(clip_paths[0], merged_path)
+                        clip_path = merged_path
+                    except Exception as copy_e:
+                        logger.error(f"Error copying fallback clip: {copy_e}")
     else:
         logger.info("Skipping clip generation as requested or no segments found")
-    
+        
     # Calculate processing time
     end_time = time.time()
     processing_time = end_time - start_time

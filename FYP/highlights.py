@@ -1134,8 +1134,8 @@ async def generate_custom_highlights(video_path, transcript_segments, video_info
 
 ##################################   Interactive    Q/A  ##################################################################################
 
-def extract_qa_clips(video_path, highlights):
-    """Extract precise clips for Q&A functionality using MoviePy."""
+def extract_qa_clips(video_path, highlights, transcript_segments):
+    """Extract precise clips for Q&A functionality using MoviePy without fade effects."""
     temp_dir = os.path.join(OUTPUT_DIR, "temp_qa_clips")
     os.makedirs(temp_dir, exist_ok=True)
 
@@ -1154,8 +1154,8 @@ def extract_qa_clips(video_path, highlights):
                 video.close()
                 return None, None
             
-            # Load a small buffer for smoother cutting, but respect the actual boundaries for the final clip
-            load_buffer = 0.5  # Buffer for loading (to avoid frame dropping at the edges)
+            # Load a buffer for smoother cutting
+            load_buffer = 1.0  # Increased buffer for smoother audio transitions
             start_load = max(0, s - load_buffer)
             end_load = min(video.duration, e + load_buffer)
             
@@ -1209,20 +1209,31 @@ def extract_qa_clips(video_path, highlights):
 
         # Check if we have any successful clips
         if not successful_clips:
-            # If no successful clips, try to create a single meaningful clip from the middle of the video
+            # If no successful clips, create a single meaningful clip
             logger.warning("No Q&A clips were successfully extracted. Creating a fallback clip.")
             fallback_clip = os.path.join(temp_dir, "qa_fallback.mp4")
             
             from moviepy import VideoFileClip
             video = VideoFileClip(video_path)
             
-            # Try to find a meaningful part (not intro)
-            video_middle = video.duration / 2
-            fallback_start = max(30, video_middle - 15)  # Start at least 30 seconds in
-            fallback_duration = min(30, video.duration - fallback_start)
+            # Find a meaningful segment from transcript
+            fallback_segment = None
+            for start, end, text in transcript_segments:
+                # Skip intro
+                if start >= 30 and end - start >= 10 and re.search(r'[.!?]$', text):
+                    fallback_segment = (start, end, text)
+                    break
+            
+            if fallback_segment:
+                fallback_start, fallback_end, _ = fallback_segment
+            else:
+                # Default to middle of video if no good segment found
+                video_middle = video.duration / 2
+                fallback_start = max(30, video_middle - 15)
+                fallback_end = fallback_start + 30
             
             # Use subclipped
-            clip = video.subclipped(fallback_start, fallback_start + fallback_duration)
+            clip = video.subclipped(fallback_start, fallback_end)
             clip.write_videofile(
                 fallback_clip,
                 codec="libx264",
@@ -1235,8 +1246,8 @@ def extract_qa_clips(video_path, highlights):
 
             return [fallback_clip], [{
                 "start": fallback_start,
-                "end": fallback_start + fallback_duration,
-                "description": "Q&A fallback clip (middle of video)"
+                "end": fallback_end,
+                "description": "Complete sentence from video"
             }]
 
         # Return successful clips
@@ -1246,8 +1257,9 @@ def extract_qa_clips(video_path, highlights):
         logger.error(f"Error extracting Q&A clips: {e}")
         return [], []
 
+
 def merge_qa_clips(clip_paths, highlight_info, is_reel=False):
-    """Merge Q&A clips with precise boundaries and better naming."""
+    """Merge Q&A clips with precise boundaries and better naming - no transitions."""
     logger.info(f"Merging {len(clip_paths)} Q&A clips...")
     
     if not clip_paths:
@@ -1288,8 +1300,8 @@ def merge_qa_clips(clip_paths, highlight_info, is_reel=False):
     logger.info(f"Successfully loaded {len(final_clips)} Q&A clips for merging")
 
     try:
-        # Simple concatenation for Q&A clips
-        logger.info(f"Concatenating {len(final_clips)} Q&A clips...")
+        # Simple concatenation for Q&A clips - no transitions
+        logger.info(f"Concatenating {len(final_clips)} Q&A clips (no transitions)...")
         merged_clip = concatenate_videoclips(final_clips, method="compose")
 
         # Write the merged video file
