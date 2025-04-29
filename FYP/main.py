@@ -381,6 +381,10 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
         elif re.search(r'english subtitles|add subtitles|create subtitles|subtitle', user_input.lower()):
             query_type = "english_subtitles"
 
+        # Add this to your query type detection section in the main loop
+        elif re.search(r'study guide|study material|learning guide|course notes', user_input.lower()):
+            query_type = "study_guide"
+
         elif re.search(r'meeting minutes|minutes|meeting notes|meeting summary', user_input.lower()):
             query_type = "meeting_minutes"
 
@@ -515,6 +519,34 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
                 print(f"Clip title: {qa_result['clip_title']}")
             else:
                 print("\nNo clip could be generated. The video may not contain relevant information.")
+
+        # Handle study guide requests
+        elif query_type == "study_guide":
+            print("Generating a comprehensive study guide. This may take a few minutes...")
+            
+            from study_guide import generate_study_guide
+            
+            study_guide_result = await generate_study_guide(
+                transcript_segments,
+                video_info
+            )
+            
+            if study_guide_result and study_guide_result.get("file_path"):
+                print(f"\nStudy guide generated successfully!")
+                print(f"Saved to: {study_guide_result['file_path']}")
+                
+                # Display a preview of the study guide
+                print("\nPreview of the study guide:")
+                
+                # Show the first few sections as a preview
+                preview_lines = study_guide_result['formatted_study_guide'].split('\n')[:20]
+                for line in preview_lines:
+                    print(line)
+                
+                if len(preview_lines) < len(study_guide_result['formatted_study_guide'].split('\n')):
+                    print("... (study guide continues)")
+            else:
+                print("Sorry, I couldn't generate a study guide for this video. Please try again.")
 
         elif query_type == "english_subtitles":
             print(f"Creating subtitles for your video. This may take some time...")
