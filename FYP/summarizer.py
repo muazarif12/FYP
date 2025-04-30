@@ -201,6 +201,321 @@ async def generate_key_moments_with_titles(transcript_segments, full_timestamped
     
     return key_moments_structured, formatted_text
 
+
+# async def generate_key_moments_algorithmically(transcript_segments, full_timestamped_transcript):
+#     """
+#     Generate key moments from transcript using algorithmic methods without LLM.
+#     Ensures all timestamps are in HH:MM:SS format and improves title generation.
+#     """
+#     import re
+#     import numpy as np
+#     from collections import Counter
+    
+#     # Helper function to convert seconds to HH:MM:SS
+#     def seconds_to_timestamp(seconds):
+#         if isinstance(seconds, str):
+#             # If it's already in HH:MM:SS format, return it
+#             if re.match(r'\d{2}:\d{2}:\d{2}', seconds):
+#                 return seconds
+#             try:
+#                 seconds = float(seconds)
+#             except ValueError:
+#                 return "00:00:00"  # Default if conversion fails
+                
+#         hours = int(seconds // 3600)
+#         minutes = int((seconds % 3600) // 60)
+#         secs = int(seconds % 60)
+#         return f"{hours:02d}:{minutes:02d}:{secs:02d}"
+    
+#     # Ensure we have the introduction
+#     key_moments = [
+#         {
+#             "timestamp": "00:00:00",
+#             "title": "Introduction",
+#             "description": "Beginning of the video."
+#         }
+#     ]
+    
+#     # Extract timestamps and text from the transcript
+#     timestamps = []
+#     texts = []
+    
+#     for segment in transcript_segments:
+#         if len(segment) >= 3:
+#             # Convert timestamp to proper format (assuming segment[0] contains timestamp)
+#             timestamp = seconds_to_timestamp(segment[0])
+#             text = segment[2].strip()  # Assuming segment[2] contains text
+            
+#             timestamps.append(timestamp)
+#             texts.append(text)
+    
+#     # Skip if transcript is too short
+#     if len(texts) < 10:
+#         return key_moments, format_key_moments(key_moments)
+    
+#     try:
+#         # Segment the video into approximately 5-7 key moments (plus intro)
+#         total_segments = len(texts)
+#         num_key_moments = min(7, max(5, total_segments // 50 + 3))
+        
+#         # Create evenly spaced key moments
+#         segment_indices = [int((i+1) * total_segments / (num_key_moments+1)) for i in range(num_key_moments)]
+        
+#         # Generate better titles using n-grams and frequency analysis
+#         for i, idx in enumerate(segment_indices):
+#             if idx >= len(texts):
+#                 continue
+                
+#             # Get context by including surrounding text
+#             start_context = max(0, idx - 2)
+#             end_context = min(len(texts), idx + 3)
+#             context_text = " ".join(texts[start_context:end_context])
+            
+#             # Generate title using most frequent meaningful words
+#             words = re.findall(r'\b[a-zA-Z]{3,}\b', context_text.lower())
+#             # Filter out common stopwords
+#             stopwords = {'and', 'the', 'this', 'that', 'with', 'from', 'have', 'just', 'not', 'for', 'but', 'what', 'you', 'all'}
+#             filtered_words = [w for w in words if w not in stopwords]
+            
+#             # Get most common words
+#             word_counts = Counter(filtered_words)
+#             top_words = [word for word, count in word_counts.most_common(3) if count > 1]
+            
+#             # If we don't have enough repeated words, take the most frequent ones anyway
+#             if len(top_words) < 2:
+#                 top_words = [word for word, _ in word_counts.most_common(2)]
+            
+#             # Capitalize each word for the title
+#             title_words = [word.capitalize() for word in top_words[:2]]
+#             title = " ".join(title_words) if title_words else f"Key Moment {i+1}"
+            
+#             # Better description by taking the most representative sentence
+#             sentences = re.split(r'[.!?]', context_text)
+#             best_sentence = max(sentences, key=len) if sentences else context_text
+#             description = best_sentence.strip()[:100]
+#             if description and not description.endswith(('.', '!', '?')):
+#                 description += "..."
+            
+#             # Add to key moments
+#             key_moments.append({
+#                 "timestamp": timestamps[idx],
+#                 "title": title,
+#                 "description": description
+#             })
+    
+#     except Exception as e:
+#         print(f"Error in algorithmic key moments generation: {e}")
+#         # Create basic key moments as fallback
+#         interval = max(1, len(texts) // 5)
+#         for i in range(1, 6):
+#             idx = min(i * interval, len(texts) - 1)
+#             key_moments.append({
+#                 "timestamp": timestamps[idx],
+#                 "title": f"Key Moment {i}",
+#                 "description": texts[idx][:100] + "..." if texts[idx] and len(texts[idx]) > 100 else texts[idx]
+#             })
+    
+#     # Sort by timestamp to ensure chronological order
+#     key_moments.sort(key=lambda x: x["timestamp"])
+    
+#     # Format the key moments
+#     formatted_text = format_key_moments(key_moments)
+#     return key_moments, formatted_text
+
+# # Helper function to convert timestamp to seconds
+# def convert_timestamp_to_seconds(timestamp):
+#     parts = timestamp.split(":")
+#     if len(parts) == 3:
+#         hours, minutes, seconds = map(int, parts)
+#         return hours * 3600 + minutes * 60 + seconds
+#     elif len(parts) == 2:
+#         minutes, seconds = map(int, parts)
+#         return minutes * 60 + seconds
+#     return 0
+
+
+async def generate_key_moments_algorithmically(transcript_segments, full_timestamped_transcript, detected_language="en"):
+    """
+    Generate key moments from transcript using algorithmic methods but enhance titles with LLM.
+    Ensures all timestamps are in HH:MM:SS format and provides high-quality titles.
+    """
+    import re
+    import numpy as np
+    from collections import Counter
+    
+    # Helper function to convert seconds to HH:MM:SS
+    def seconds_to_timestamp(seconds):
+        if isinstance(seconds, str):
+            # If it's already in HH:MM:SS format, return it
+            if re.match(r'\d{2}:\d{2}:\d{2}', seconds):
+                return seconds
+            try:
+                seconds = float(seconds)
+            except ValueError:
+                return "00:00:00"  # Default if conversion fails
+                
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        secs = int(seconds % 60)
+        return f"{hours:02d}:{minutes:02d}:{secs:02d}"
+    
+    # Ensure we have the introduction
+    key_moments = [
+        {
+            "timestamp": "00:00:00",
+            "title": "Introduction",
+            "description": "Beginning of the video."
+        }
+    ]
+    
+    # Extract timestamps and text from the transcript
+    timestamps = []
+    texts = []
+    
+    for segment in transcript_segments:
+        if len(segment) >= 3:
+            # Convert timestamp to proper format (assuming segment[0] contains timestamp)
+            timestamp = seconds_to_timestamp(segment[0])
+            text = segment[2].strip()  # Assuming segment[2] contains text
+            
+            timestamps.append(timestamp)
+            texts.append(text)
+    
+    # Skip if transcript is too short
+    if len(texts) < 10:
+        return key_moments, format_key_moments(key_moments)
+    
+    try:
+        # Segment the video into approximately 5-7 key moments (plus intro)
+        total_segments = len(texts)
+        num_key_moments = min(10, max(5, total_segments // 50 + 3))
+        
+        # Create evenly spaced key moments
+        segment_indices = [int((i+1) * total_segments / (num_key_moments+1)) for i in range(num_key_moments)]
+        
+        # Build moment contexts for LLM title generation
+        moment_contexts = []
+        temp_key_moments = []
+        
+        for i, idx in enumerate(segment_indices):
+            if idx >= len(texts):
+                continue
+                
+            # Get context by including surrounding text
+            start_context = max(0, idx - 2)
+            end_context = min(len(texts), idx + 3)
+            context_text = " ".join(texts[start_context:end_context])
+            
+            # Generate a basic algorithmic title as fallback
+            words = re.findall(r'\b[a-zA-Z]{3,}\b', context_text.lower())
+            # Filter out common stopwords
+            stopwords = {'and', 'the', 'this', 'that', 'with', 'from', 'have', 'just', 'not', 'for', 'but', 'what', 'you', 'all'}
+            filtered_words = [w for w in words if w not in stopwords]
+            
+            # Get most common words
+            word_counts = Counter(filtered_words)
+            top_words = [word for word, count in word_counts.most_common(3) if count > 1]
+            
+            # If we don't have enough repeated words, take the most frequent ones anyway
+            if len(top_words) < 2:
+                top_words = [word for word, _ in word_counts.most_common(2)]
+            
+            # Capitalize each word for the title
+            title_words = [word.capitalize() for word in top_words[:2]]
+            fallback_title = " ".join(title_words) if title_words else f"Key Moment {i+1}"
+            
+            # Better description by taking the most representative sentence
+            sentences = re.split(r'[.!?]', context_text)
+            best_sentence = max(sentences, key=len) if sentences else context_text
+            description = best_sentence.strip()[:100]
+            if description and not description.endswith(('.', '!', '?')):
+                description += "..."
+            
+            # Save the context for LLM title generation
+            moment_contexts.append({
+                "index": i,
+                "timestamp": timestamps[idx],
+                "context": context_text[:300],  # Limit context size
+                "fallback_title": fallback_title,
+                "description": description
+            })
+            
+            # Add to temporary key moments with fallback title
+            temp_key_moments.append({
+                "timestamp": timestamps[idx],
+                "title": fallback_title,  # Will be replaced by LLM-generated title
+                "description": description
+            })
+        
+        # Generate all titles at once using LLM
+        print("Generating meaningful titles using LLM...")
+        
+        # Create a combined prompt for all titles to reduce LLM calls
+        titles_prompt = f"""
+        You are a video content analyzer. Based on the contexts provided, generate short, engaging titles (2-3 words each) 
+        for these video moments. Each title should be concise but descriptive of what happens at that timestamp.
+        
+        Just return a JSON array of titles in this exact format, with no additional text:
+        [
+          "Title for Context 1",
+          "Title for Context 2",
+          ...
+        ]
+        
+        Here are the contexts:
+        """
+        
+        for i, moment in enumerate(moment_contexts):
+            titles_prompt += f"\nContext {i+1} (at {moment['timestamp']}): {moment['context']}\n"
+            
+        # Call LLM to generate titles
+        try:
+            titles_response = await generate_response_async(titles_prompt, detected_language)
+            
+            # Extract titles from response
+            import json
+            # Try to find and parse JSON array
+            import re
+            json_match = re.search(r'\[\s*".*"\s*\]', titles_response.replace('\n', ' '), re.DOTALL)
+            
+            if json_match:
+                titles = json.loads(json_match.group(0))
+                
+                # Ensure we have the right number of titles
+                if len(titles) >= len(moment_contexts):
+                    # Update temp_key_moments with LLM-generated titles
+                    for i, moment in enumerate(temp_key_moments):
+                        moment["title"] = titles[i]
+                else:
+                    print(f"LLM returned {len(titles)} titles, expected {len(moment_contexts)}. Using fallback titles.")
+            else:
+                print("Couldn't parse LLM title response. Using fallback titles.")
+                
+        except Exception as e:
+            print(f"Error getting LLM titles: {e}. Using fallback titles.")
+        
+        # Add all moments to the key_moments list
+        key_moments.extend(temp_key_moments)
+        
+    except Exception as e:
+        print(f"Error in algorithmic key moments generation: {e}")
+        # Create basic key moments as fallback
+        interval = max(1, len(texts) // 5)
+        for i in range(1, 6):
+            idx = min(i * interval, len(texts) - 1)
+            key_moments.append({
+                "timestamp": timestamps[idx],
+                "title": f"Key Moment {i}",
+                "description": texts[idx][:100] + "..." if texts[idx] and len(texts[idx]) > 100 else texts[idx]
+            })
+    
+    # Sort by timestamp to ensure chronological order
+    key_moments.sort(key=lambda x: x["timestamp"])
+    
+    # Format the key moments
+    formatted_text = format_key_moments(key_moments)
+    return key_moments, formatted_text
+
 def extract_key_moments_manually(text, valid_timestamps):
     """Extract key moments from text response when JSON parsing fails."""
     key_moments = []
