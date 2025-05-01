@@ -1,297 +1,302 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends, Query
-from fastapi.responses import FileResponse, JSONResponse
+import shutil
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
+from fastapi.responses import JSONResponse, FileResponse
+from pydantic import BaseModel
+from typing import Optional, List, Dict
 import os
 import asyncio
 import uuid
-from typing import Optional, List
 
 from core.config import settings
-from core.models import (
-    PodcastRequest,
-    PodcastResponse,
-    ProcessingStatusResponse
-)
+
+# Import from utils router to access task storage
+from routers.utils import task_storage
 
 # Import existing functions
 import sys
 sys.path.append('.')  # Ensure current directory is in path
 from podcast_integration import generate_podcast
-from podcast_generator import generate_podcast_script, save_podcast_script
-from gtts_audio_generator import generate_podcast_audio_with_gtts
-from downloader import download_video
 
 router = APIRouter()
 
-# Dictionary to track background tasks
-task_status = {}
+# Dictionary to track podcast tasks
+podcast_task_storage = {}
 
-async def process_podcast_generation(
-    task_id: str,
-    video_path: str,
-    transcript_segments: List,
-    video_info: dict,
-    custom_style: Optional[str] = None,
-    detected_language: str = "en"
-):
-    """Background task to process podcast generation"""
+# Data models
+class PodcastRequest(BaseModel):
+    task_id: str  # Task ID from video processing
+    style: Optional[str] = None  # Optional podcast style
+
+class PodcastResponse(BaseModel):
+    podcast_task_id: str
+    status: str = "processing"
+    message: str
+
+class PodcastResult(BaseModel):
+    title: str
+    audio_url: Optional[str] = None
+    transcript_url: Optional[str] = None
+    duration_minutes: float
+    hosts: List[str]
+
+@router.post("/podcast", response_model=PodcastResponse, tags=["Podcast"])
+async def create_podcast(request: PodcastRequest, background_tasks: BackgroundTasks):
+    """
+    Generate a conversational podcast from the video content.
+    
+    - **task_id**: Task ID from video processing
+    - **style**: Optional style for the podcast (casual, educational, formal, etc.)
+    
+    Returns a task ID to track the podcast generation.
+    """
+    # Verify that the task exists and is completed
+    if request.task_id not in task_storage:
+        raise HTTPException(status_code=404, detail=f"Task {request.task_id} not found")
+    
+    task_info = task_storage[request.task_id]
+    
+    if task_info["status"] != "completed":
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Task processing not complete. Current status: {task_info['status']}"
+        )
+    
+    # Create a new task ID for this podcast request
+    podcast_task_id = str(uuid.uuid4())
+    
     try:
-        task_status[task_id] = {"status": "processing", "progress": 0}
+        # Start podcast generation in background
+        background_tasks.add_task(
+            process_podcast_generation,
+            podcast_task_id,
+            request.task_id,
+            request.style
+        )
         
-        # Update progress
-        task_status[task_id]["progress"] = 30
+        # Initialize task status
+        podcast_task_storage[podcast_task_id] = {
+            "status": "processing",
+            "message": "Generating podcast..."
+        }
+        
+        return PodcastResponse(
+            podcast_task_id=podcast_task_id,
+            status="processing",
+            message="Your podcast is being generated. Use the podcast_task_id to check status and get results."
+        )
+    
+    except Exception as e:
+        podcast_task_storage[podcast_task_id] = {
+            "status": "failed",
+            "error": str(e)
+        }
+        raise HTTPException(status_code=500, detail=f"Error starting podcast generation: {str(e)}")
+
+@router.get("/podcast/status/{podcast_task_id}", tags=["Podcast"])
+async def check_podcast_status(podcast_task_id: str):
+    """
+    Check the status of a podcast generation task.
+    
+    - **podcast_task_id**: Podcast task ID to check
+    
+    Returns the current status of the podcast generation.
+    """
+    if podcast_task_id not in podcast_task_storage:
+        raise HTTPException(status_code=404, detail=f"Podcast task {podcast_task_id} not found")
+    
+    return podcast_task_storage[podcast_task_id]
+
+@router.get("/podcast/result/{podcast_task_id}", response_model=PodcastResult, tags=["Podcast"])
+async def get_podcast_result(podcast_task_id: str):
+    """
+    Get the results of a completed podcast generation task.
+    
+    - **podcast_task_id**: Podcast task ID
+    
+    Returns information about the generated podcast including URLs to audio and transcript.
+    """
+    if podcast_task_id not in podcast_task_storage:
+        raise HTTPException(status_code=404, detail=f"Podcast task {podcast_task_id} not found")
+    
+    task_info = podcast_task_storage[podcast_task_id]
+    
+    if task_info["status"] != "completed":
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Podcast task not complete. Current status: {task_info['status']}"
+        )
+    
+    if "result" not in task_info:
+        raise HTTPException(status_code=500, detail="No result available")
+    
+    return PodcastResult(**task_info["result"])
+
+@router.get("/podcast/audio/{podcast_task_id}", tags=["Podcast"])
+async def get_podcast_audio(podcast_task_id: str):
+    """
+    Download the podcast audio.
+    
+    - **podcast_task_id**: Podcast task ID
+    
+    Returns the podcast audio file.
+    """
+    if podcast_task_id not in podcast_task_storage:
+        raise HTTPException(status_code=404, detail=f"Podcast task {podcast_task_id} not found")
+    
+    task_info = podcast_task_storage[podcast_task_id]
+    
+    if task_info["status"] != "completed":
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Podcast task not complete. Current status: {task_info['status']}"
+        )
+    
+    if "result" not in task_info or "audio_path" not in task_info["result"]:
+        raise HTTPException(status_code=404, detail="No audio available for this podcast")
+    
+    audio_path = task_info["result"]["audio_path"]
+    
+    if not os.path.exists(audio_path):
+        raise HTTPException(status_code=404, detail="Audio file not found")
+    
+    return FileResponse(
+        audio_path,
+        media_type="audio/mpeg",
+        filename=f"podcast_{podcast_task_id}.mp3"
+    )
+
+@router.get("/podcast/transcript/{podcast_task_id}", tags=["Podcast"])
+async def get_podcast_transcript(podcast_task_id: str):
+    """
+    Download the podcast transcript.
+    
+    - **podcast_task_id**: Podcast task ID
+    
+    Returns the podcast transcript file.
+    """
+    if podcast_task_id not in podcast_task_storage:
+        raise HTTPException(status_code=404, detail=f"Podcast task {podcast_task_id} not found")
+    
+    task_info = podcast_task_storage[podcast_task_id]
+    
+    if task_info["status"] != "completed":
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Podcast task not complete. Current status: {task_info['status']}"
+        )
+    
+    if "result" not in task_info or "transcript_path" not in task_info["result"]:
+        raise HTTPException(status_code=404, detail="No transcript available for this podcast")
+    
+    transcript_path = task_info["result"]["transcript_path"]
+    
+    if not os.path.exists(transcript_path):
+        raise HTTPException(status_code=404, detail="Transcript file not found")
+    
+    return FileResponse(
+        transcript_path,
+        media_type="text/plain",
+        filename=f"podcast_transcript_{podcast_task_id}.txt"
+    )
+
+# Background task for processing podcast generation
+async def process_podcast_generation(podcast_task_id: str, video_task_id: str, style: Optional[str] = None):
+    """Background task to generate podcast from video"""
+    try:
+        podcast_task_storage[podcast_task_id] = {
+            "status": "processing",
+            "message": "Generating podcast..."
+        }
+        
+        # Get video and transcript info from the original task
+        task_info = task_storage[video_task_id]
+        video_path = task_info["video_info"]["path"]
+        transcript_segments = task_info["transcript_info"]["segments"]
+        detected_language = task_info["transcript_info"]["language"]
+        video_info = {
+            "title": task_info["video_info"]["title"],
+            "description": task_info["video_info"]["description"]
+        }
+        
+        # Create output directory for podcasts if it doesn't exist
+        podcasts_dir = os.path.join(settings.OUTPUT_DIR, "podcast")
+        os.makedirs(podcasts_dir, exist_ok=True)
         
         # Generate podcast
         podcast_path, podcast_data = await generate_podcast(
             video_path,
             transcript_segments,
             video_info,
-            custom_prompt=custom_style,
+            custom_prompt=style,
             detected_language=detected_language
         )
         
-        # Update progress
-        task_status[task_id]["progress"] = 100
-        
-        if podcast_path and os.path.exists(podcast_path):
-            # Move the podcast file to the podcast directory with the task ID
-            filename = os.path.basename(podcast_path)
-            new_path = os.path.join(settings.PODCAST_DIR, f"{task_id}_{filename}")
-            
-            # Also handle the transcript file
-            script_path = None
-            script_filename = None
-            
-            # Check if podcast_path is a script or audio file
-            if podcast_path.endswith('.txt'):
-                # It's a text script
-                script_path = podcast_path
-                os.rename(script_path, new_path)
-            else:
-                # It's an audio file
-                os.rename(podcast_path, new_path)
-                
-                # Try to find the associated script
-                script_path = os.path.join(settings.PODCAST_DIR, f"{os.path.splitext(filename)[0]}.txt")
-                if os.path.exists(script_path):
-                    script_filename = f"{task_id}_{os.path.basename(script_path)}"
-                    script_new_path = os.path.join(settings.PODCAST_DIR, script_filename)
-                    os.rename(script_path, script_new_path)
-                    script_path = script_new_path
-            
-            # Get podcast duration
-            duration = podcast_data.get('estimated_duration_minutes', 5) * 60  # Convert to seconds
-            
-            # Set task as completed
-            task_status[task_id] = {
-                "status": "completed", 
-                "progress": 100,
-                "result": {
-                    "podcast_url": f"/downloads/podcast/{os.path.basename(new_path)}",
-                    "transcript_url": f"/downloads/podcast/{script_filename}" if script_filename else None,
-                    "title": podcast_data.get('title', 'Podcast'),
-                    "duration": duration,
-                    "hosts": podcast_data.get('hosts', ['Host1', 'Host2'])
-                }
-            }
-        else:
-            task_status[task_id] = {
-                "status": "failed", 
-                "progress": 100,
+        if not podcast_path:
+            podcast_task_storage[podcast_task_id] = {
+                "status": "failed",
                 "error": "Failed to generate podcast"
             }
-    except Exception as e:
-        task_status[task_id] = {
-            "status": "failed", 
-            "progress": 100,
-            "error": str(e)
+            return
+        
+        # Determine if it's an audio file or just a transcript
+        is_audio = podcast_path.endswith(('.mp3', '.wav', '.ogg', '.m4a'))
+        
+        # Rename and move files to permanent location
+        audio_path = None
+        transcript_path = None
+        
+        if is_audio:
+            # It's an audio file
+            audio_filename = f"{podcast_task_id}_podcast.mp3"
+            audio_path = os.path.join(podcasts_dir, audio_filename)
+            
+            # Move the file
+            shutil.copy(podcast_path, audio_path)
+            
+            # Try to find associated transcript
+            script_base = os.path.splitext(podcast_path)[0]
+            if os.path.exists(f"{script_base}.txt"):
+                transcript_filename = f"{podcast_task_id}_transcript.txt"
+                transcript_path = os.path.join(podcasts_dir, transcript_filename)
+                shutil.copy(f"{script_base}.txt", transcript_path)
+        else:
+            # It's just a transcript
+            transcript_filename = f"{podcast_task_id}_transcript.txt"
+            transcript_path = os.path.join(podcasts_dir, transcript_filename)
+            
+            # Move the file
+            shutil.copy(podcast_path, transcript_path)
+        
+        # Calculate duration estimate
+        if 'estimated_duration_minutes' in podcast_data:
+            duration_minutes = float(podcast_data['estimated_duration_minutes'])
+        else:
+            # Estimate based on word count if audio not generated
+            script = podcast_data.get('script', [])
+            total_words = sum(len(line.get('text', '').split()) for line in script)
+            # Average speaking pace: ~150 words per minute
+            duration_minutes = total_words / 150
+        
+        # Store the result
+        result = {
+            "title": podcast_data.get('title', 'Podcast about ' + video_info["title"]),
+            "hosts": podcast_data.get('hosts', ['Host1', 'Host2']),
+            "duration_minutes": duration_minutes,
+            "audio_url": f"/api/podcast/audio/{podcast_task_id}" if audio_path else None,
+            "transcript_url": f"/api/podcast/transcript/{podcast_task_id}" if transcript_path else None,
+            "audio_path": audio_path,  # For internal use
+            "transcript_path": transcript_path  # For internal use
         }
-
-@router.post("/podcast/generate", response_model=ProcessingStatusResponse, 
-             summary="Generate podcast from video")
-async def generate_video_podcast(
-    request: PodcastRequest,
-    background_tasks: BackgroundTasks
-):
-    """
-    Generate a podcast (conversation) from a YouTube video or uploaded video.
-    
-    - **video_id**: ID of the uploaded video (if already uploaded)
-    - **youtube_url**: YouTube URL (will be downloaded)
-    - **transcript_id**: ID of an existing transcript (if already processed)
-    - **style**: Custom style for the podcast (casual, formal, educational, etc.)
-    
-    Returns a task ID for checking the status of the podcast generation process.
-    """
-    task_id = str(uuid.uuid4())
-    
-    try:
-        # Check that we have a video source
-        if not request.video_id and not request.youtube_url:
-            raise HTTPException(status_code=400, detail="Either video_id or youtube_url is required")
         
-        # Get transcript segments
-        transcript_segments = None
-        detected_language = "en"
-        
-        if request.transcript_id:
-            # Load transcript from file
-            transcript_file = os.path.join(settings.TRANSCRIPTS_DIR, f"{request.transcript_id}_transcript.txt")
-            
-            if not os.path.exists(transcript_file):
-                raise HTTPException(status_code=404, detail=f"Transcript {request.transcript_id} not found")
-            
-            # Logic to load transcript segments from file
-            # This is a placeholder - you'll need to implement this based on your transcript format
-            # transcript_segments = load_transcript_segments_from_file(transcript_file)
-            
-            # Placeholder for now - you'll need to get this from your transcription service
-            raise HTTPException(status_code=400, detail="Loading from transcript_id not yet implemented")
-        
-        # Get the video file
-        video_path = None
-        video_info = {}
-        
-        if request.youtube_url:
-            # Download from YouTube
-            downloaded_file, video_title, video_description, video_id = await download_video(request.youtube_url)
-            
-            if not downloaded_file:
-                raise HTTPException(status_code=400, detail="Failed to download YouTube video")
-            
-            video_path = downloaded_file
-            video_info = {"title": video_title, "description": video_description}
-            
-            # If we don't have transcript segments already, get them from YouTube
-            if not transcript_segments:
-                from transcriber import get_youtube_transcript, transcribe_video
-                
-                # Try YouTube transcript first
-                if video_id:
-                    transcript_segments, _, detected_language = await get_youtube_transcript(video_id)
-                
-                # Fall back to Whisper transcription
-                if not transcript_segments:
-                    transcript_segments, _, detected_language = await transcribe_video(video_path)
-                    
-                if not transcript_segments:
-                    raise HTTPException(status_code=400, detail="Failed to transcribe video")
-        
-        elif request.video_id:
-            # Get video from storage
-            video_path = os.path.join(settings.TEMP_DIR, f"{request.video_id}")
-            
-            if not os.path.exists(video_path):
-                raise HTTPException(status_code=404, detail=f"Video {request.video_id} not found")
-            
-            # If we don't have transcript segments, transcribe the video
-            if not transcript_segments:
-                from transcriber import transcribe_video
-                transcript_segments, _, detected_language = await transcribe_video(video_path)
-                
-                if not transcript_segments:
-                    raise HTTPException(status_code=400, detail="Failed to transcribe video")
-        
-        # Start processing in background
-        background_tasks.add_task(
-            process_podcast_generation,
-            task_id,
-            video_path,
-            transcript_segments,
-            video_info,
-            request.style,
-            detected_language
-        )
-        
-        return ProcessingStatusResponse(
-            task_id=task_id,
-            status="processing",
-            progress=0,
-            result_url=None
-        )
+        podcast_task_storage[podcast_task_id] = {
+            "status": "completed",
+            "result": result
+        }
         
     except Exception as e:
-        task_status[task_id] = {
-            "status": "failed", 
-            "progress": 100,
-            "error": str(e)
+        import traceback
+        podcast_task_storage[podcast_task_id] = {
+            "status": "failed",
+            "error": str(e),
+            "traceback": traceback.format_exc()
         }
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.get("/podcast/status/{task_id}", response_model=ProcessingStatusResponse, 
-            summary="Check podcast generation status")
-async def check_podcast_status(task_id: str):
-    """
-    Check the status of a podcast generation task.
-    
-    - **task_id**: The ID of the task to check
-    
-    Returns the current status of the podcast generation process.
-    """
-    if task_id not in task_status:
-        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
-    
-    status_info = task_status[task_id]
-    
-    response = ProcessingStatusResponse(
-        task_id=task_id,
-        status=status_info["status"],
-        progress=status_info["progress"],
-        result_url=None,
-        error=status_info.get("error")
-    )
-    
-    # If completed, add results URL
-    if status_info["status"] == "completed":
-        result = status_info.get("result", {})
-        response.result_url = result.get("podcast_url")
-    
-    return response
-
-@router.get("/podcast/result/{task_id}", response_model=PodcastResponse,
-           summary="Get podcast generation results")
-async def get_podcast_result(task_id: str):
-    """
-    Get the results of a completed podcast generation task.
-    
-    - **task_id**: The ID of the completed task
-    
-    Returns the podcast generation results.
-    """
-    if task_id not in task_status:
-        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
-    
-    status_info = task_status[task_id]
-    
-    if status_info["status"] != "completed":
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Task is {status_info['status']}, not completed"
-        )
-    
-    if "result" not in status_info:
-        raise HTTPException(status_code=500, detail="No result available")
-    
-    return PodcastResponse(**status_info["result"])
-
-@router.get("/podcast/{filename}", summary="Download a podcast file")
-async def get_podcast_file(filename: str):
-    """
-    Download a specific podcast file (audio or transcript).
-    
-    - **filename**: The name of the podcast file to download
-    
-    Returns the podcast file.
-    """
-    file_path = os.path.join(settings.PODCAST_DIR, filename)
-    
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail=f"Podcast file {filename} not found")
-    
-    # Determine media type based on file extension
-    media_type = "audio/mpeg" if filename.endswith((".mp3", ".mpeg")) else "text/plain"
-    
-    return FileResponse(
-        file_path, 
-        media_type=media_type, 
-        filename=filename
-    )

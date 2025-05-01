@@ -1,325 +1,435 @@
-from fastapi import APIRouter, HTTPException, BackgroundTasks, Depends, Query
-from fastapi.responses import FileResponse, JSONResponse
+# from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
+# from fastapi.responses import JSONResponse
+# from pydantic import BaseModel
+# from typing import Optional, List
+# import os
+# import asyncio
+# import uuid
+
+# # Import from utils router to access task storage
+# from routers.utils import task_storage
+
+# # Import existing functions
+# import sys
+# sys.path.append('.')  # Ensure current directory is in path
+# from summarizer import generate_enhanced_response
+# from retrieval import retrieve_chunks, initialize_indexes
+
+# router = APIRouter()
+
+# # Data models
+# class ChatRequest(BaseModel):
+#     task_id: str
+#     message: str
+
+# class ChatResponse(BaseModel):
+#     response: str
+
+# @router.post("/chat", response_model=ChatResponse, tags=["Chat"])
+# async def chat_with_video(request: ChatRequest):
+#     """
+#     Simple chat with the video content. Ask questions and receive text responses.
+    
+#     - **task_id**: Task ID from video processing
+#     - **message**: User's question or message
+    
+#     Returns a response based on the video content.
+#     """
+#     # Verify that the task exists and is completed
+#     if request.task_id not in task_storage:
+#         raise HTTPException(status_code=404, detail=f"Task {request.task_id} not found")
+    
+#     task_info = task_storage[request.task_id]
+    
+#     if task_info["status"] != "completed":
+#         raise HTTPException(
+#             status_code=400, 
+#             detail=f"Task processing not complete. Current status: {task_info['status']}"
+#         )
+    
+#     try:
+#         # Extract transcript info
+#         transcript_segments = task_info["transcript_info"]["segments"]
+#         full_text = task_info["transcript_info"]["full_text"]
+#         detected_language = task_info["transcript_info"]["language"]
+        
+#         # Initialize retrieval indexes
+#         await initialize_indexes(full_text)
+        
+#         # Determine query type
+#         query_type = "general"
+#         if any(term in request.message.lower() for term in ["timeline", "key moments", "chapters", "sections", "timestamps"]):
+#             query_type = "key_moments"
+#         elif any(term in request.message.lower() for term in ["summarize", "summary", "overview", "what is the video about"]):
+#             query_type = "summary"
+#         elif any(term in request.message.lower() for term in ["key topics", "main points", "main ideas", "central themes"]):
+#             query_type = "key_topics"
+        
+#         # Retrieve relevant chunks
+#         retrieved_docs = await retrieve_chunks(full_text, request.message, k=3)
+#         references = "\n\n".join([doc.page_content for doc in retrieved_docs])
+        
+#         # Generate response
+#         response_text = await generate_enhanced_response(
+#             query_type, 
+#             references, 
+#             request.message, 
+#             detected_language
+#         )
+        
+#         return ChatResponse(response=response_text)
+    
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=f"Error generating response: {str(e)}")
+
+
+from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from typing import Optional, List
 import os
 import asyncio
 import uuid
-from typing import Optional, List, Dict, Any
+import re
 
-from core.config import settings
-from core.models import (
-    ChatRequest,
-    ChatResponse,
-    VideoQARequest,
-    VideoQAResponse,
-    ProcessingStatusResponse
-)
+# Import from utils router to access task storage
+from routers.utils import task_storage
 
 # Import existing functions
 import sys
 sys.path.append('.')  # Ensure current directory is in path
-from summarizer import generate_enhanced_response
+from summarizer import generate_enhanced_response, generate_key_moments_algorithmically
 from retrieval import retrieve_chunks, initialize_indexes
+from highlights import extract_highlights, generate_highlights, generate_custom_highlights, merge_clips
+from algorithmic_highlights import generate_highlights_algorithmically
+from meeting_minutes import generate_meeting_minutes, save_meeting_minutes
+from podcast_integration import generate_podcast
+from dubbing import create_english_dub
+from subtitling import create_english_subtitles
+from study_guide import generate_study_guide, generate_faq
 from video_qa import answer_video_question
-from downloader import download_video
+from utils import format_timestamp
 
 router = APIRouter()
 
-# Dictionary to track background tasks
-task_status = {}
+# Data models
+class ChatRequest(BaseModel):
+    task_id: str
+    message: str
 
-# Cache for processed transcripts to avoid re-processing
-transcript_cache = {}
+class ChatResponse(BaseModel):
+    response: str
+    response_type: str
+    extra_data: Optional[dict] = None
 
-@router.post("/chat", response_model=ChatResponse, summary="Chat with the video content")
+@router.post("/chat", response_model=ChatResponse, tags=["Chat"])
 async def chat_with_video(request: ChatRequest):
     """
-    Chat with the video content. Ask questions or request information about the video.
+    Chat with the video content. This endpoint handles all types of queries including:
+    - General questions
+    - Summary requests
+    - Key moments/timeline requests
+    - Highlight requests
+    - Podcast requests
+    - Study guide requests
+    - Subtitles requests
+    - Dubbing requests
+    - Meeting minutes requests
+    - Interactive Q&A requests
     
-    - **video_id**: ID of the uploaded/processed video
-    - **transcript_id**: ID of the processed transcript
-    - **message**: User's message/question
+    The API will automatically detect the query type and respond accordingly.
     
-    Returns a response based on the video content.
+    - **task_id**: Task ID from video processing
+    - **message**: User's message or command
+    
+    Returns a response based on the video content and detected query type.
     """
-    try:
-        # Validate request
-        if not request.video_id and not request.transcript_id:
-            raise HTTPException(status_code=400, detail="Either video_id or transcript_id is required")
-        
-        # Get transcript data
-        transcript_segments = None
-        full_text = None
-        
-        if request.transcript_id:
-            # Check if transcript is in cache
-            if request.transcript_id in transcript_cache:
-                transcript_segments = transcript_cache[request.transcript_id]["segments"]
-                full_text = transcript_cache[request.transcript_id]["text"]
-            else:
-                # Load transcript from file
-                transcript_file = os.path.join(settings.TRANSCRIPTS_DIR, f"{request.transcript_id}_transcript.txt")
-                
-                if not os.path.exists(transcript_file):
-                    raise HTTPException(status_code=404, detail=f"Transcript {request.transcript_id} not found")
-                
-                # Load the transcript segments and full text
-                # This is a placeholder - you'll need to implement based on your format
-                with open(transcript_file, 'r', encoding='utf-8') as f:
-                    full_text = f.read()
-                
-                # Parse transcript segments - implement this according to your format
-                # This is just a placeholder
-                transcript_segments = []  # parse_transcript_file(transcript_file)
-                
-                # Cache for future use
-                transcript_cache[request.transcript_id] = {
-                    "segments": transcript_segments,
-                    "text": full_text
-                }
-        
-        # If still no transcript, try to get from video file
-        if not transcript_segments and request.video_id:
-            video_path = os.path.join(settings.TEMP_DIR, f"{request.video_id}")
-            
-            if not os.path.exists(video_path):
-                raise HTTPException(status_code=404, detail=f"Video {request.video_id} not found")
-            
-            from transcriber import transcribe_video
-            transcript_segments, full_text, _ = await transcribe_video(video_path)
-            
-            if not transcript_segments:
-                raise HTTPException(status_code=400, detail="Failed to transcribe video")
-        
-        # If we only have segments and no full text, create full text
-        if transcript_segments and not full_text:
-            full_text = " ".join([seg[2] for seg in transcript_segments])
-        
-        # Initialize retrieval indexes if needed
-        await initialize_indexes(full_text)
-        
-        # Determine query type
-        query_type = "general"
-        
-        if any(term in request.message.lower() for term in ["timeline", "key moments", "chapters", "sections", "timestamps"]):
-            query_type = "key_moments"
-        elif any(term in request.message.lower() for term in ["summarize", "summary", "overview", "what is the video about"]):
-            query_type = "summary"
-        elif any(term in request.message.lower() for term in ["key topics", "main points", "main ideas", "central themes"]):
-            query_type = "key_topics"
-        
-        # Retrieve relevant chunks
-        retrieved_docs = await retrieve_chunks(full_text, request.message, k=3)
-        references = "\n\n".join([doc.page_content for doc in retrieved_docs])
-        
-        # Generate response
-        response_text = await generate_enhanced_response(
-            query_type, 
-            references, 
-            request.message, 
-            detected_language="en"
-        )
-        
-        # Format response
-        return ChatResponse(
-            response=response_text,
-            video_clip_url=None,  # No clips for basic chat
-            timestamps=[]  # No timestamps for basic chat
-        )
+    # Verify that the task exists and is completed
+    if request.task_id not in task_storage:
+        raise HTTPException(status_code=404, detail=f"Task {request.task_id} not found")
     
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-@router.post("/video_qa", response_model=ProcessingStatusResponse, summary="Q&A with video clip generation")
-async def video_qa_with_clip(
-    request: VideoQARequest,
-    background_tasks: BackgroundTasks
-):
-    """
-    Ask a question about the video and get an answer with relevant video clips.
+    task_info = task_storage[request.task_id]
     
-    - **video_id**: ID of the video to query
-    - **question**: Question about the video content
-    - **generate_clip**: Whether to generate a video clip
-    
-    Returns a task ID for checking the status of the video Q&A process.
-    """
-    task_id = str(uuid.uuid4())
-    
-    try:
-        # Validate request
-        if not request.video_id:
-            raise HTTPException(status_code=400, detail="video_id is required")
-        
-        # Get video path
-        video_path = os.path.join(settings.TEMP_DIR, f"{request.video_id}")
-        
-        if not os.path.exists(video_path):
-            raise HTTPException(status_code=404, detail=f"Video {request.video_id} not found")
-        
-        # Start background task
-        background_tasks.add_task(
-            process_video_qa,
-            task_id,
-            video_path,
-            request.video_id,
-            request.question,
-            request.generate_clip
-        )
-        
-        # Return task ID
-        return ProcessingStatusResponse(
-            task_id=task_id,
-            status="processing",
-            progress=0,
-            result_url=None
-        )
-    
-    except Exception as e:
-        task_status[task_id] = {
-            "status": "failed", 
-            "progress": 100,
-            "error": str(e)
-        }
-        raise HTTPException(status_code=500, detail=str(e))
-
-async def process_video_qa(
-    task_id: str,
-    video_path: str,
-    video_id: str,
-    question: str,
-    generate_clip: bool
-):
-    """Background task to process video Q&A with clip generation"""
-    try:
-        task_status[task_id] = {"status": "processing", "progress": 0}
-        
-        # Get transcript
-        transcript_segments = None
-        full_text = None
-        
-        # Check if transcript is in cache
-        if video_id in transcript_cache:
-            transcript_segments = transcript_cache[video_id]["segments"]
-            full_text = transcript_cache[video_id]["text"]
-        else:
-            # Transcribe the video
-            from transcriber import transcribe_video
-            transcript_segments, full_transcript, _ = await transcribe_video(video_path)
-            
-            if not transcript_segments:
-                task_status[task_id] = {
-                    "status": "failed", 
-                    "progress": 100,
-                    "error": "Failed to transcribe video"
-                }
-                return
-            
-            full_text = " ".join([seg[2] for seg in transcript_segments])
-            
-            # Cache for future use
-            transcript_cache[video_id] = {
-                "segments": transcript_segments,
-                "text": full_text
-            }
-        
-        # Update progress
-        task_status[task_id]["progress"] = 30
-        
-        # Process Q&A with clip generation
-        qa_result = await answer_video_question(
-            transcript_segments,
-            video_path,
-            question,
-            full_text=full_text,
-            generate_clip=generate_clip
-        )
-        
-        # Update progress
-        task_status[task_id]["progress"] = 100
-        
-        # Format the clip path to be a URL if it exists
-        clip_url = None
-        if qa_result.get("clip_path"):
-            clip_filename = os.path.basename(qa_result["clip_path"])
-            
-            # Move the clip to a more permanent location
-            new_clip_path = os.path.join(settings.HIGHLIGHTS_DIR, f"{task_id}_{clip_filename}")
-            os.rename(qa_result["clip_path"], new_clip_path)
-            
-            clip_url = f"/downloads/highlights/{os.path.basename(new_clip_path)}"
-        
-        # Set task as completed
-        task_status[task_id] = {
-            "status": "completed", 
-            "progress": 100,
-            "result": {
-                "answer": qa_result.get("answer", ""),
-                "clip_path": clip_url,
-                "formatted_timestamps": qa_result.get("formatted_timestamps", []),
-                "clip_title": qa_result.get("clip_title", ""),
-                "processing_time": qa_result.get("processing_time", 0)
-            }
-        }
-    
-    except Exception as e:
-        task_status[task_id] = {
-            "status": "failed", 
-            "progress": 100,
-            "error": str(e)
-        }
-
-@router.get("/video_qa/status/{task_id}", response_model=ProcessingStatusResponse, 
-            summary="Check video Q&A status")
-async def check_video_qa_status(task_id: str):
-    """
-    Check the status of a video Q&A task.
-    
-    - **task_id**: The ID of the task to check
-    
-    Returns the current status of the video Q&A process.
-    """
-    if task_id not in task_status:
-        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
-    
-    status_info = task_status[task_id]
-    
-    response = ProcessingStatusResponse(
-        task_id=task_id,
-        status=status_info["status"],
-        progress=status_info["progress"],
-        result_url=None,
-        error=status_info.get("error")
-    )
-    
-    # If completed, add results URL
-    if status_info["status"] == "completed":
-        result = status_info.get("result", {})
-        response.result_url = result.get("clip_path")
-    
-    return response
-
-@router.get("/video_qa/result/{task_id}", response_model=VideoQAResponse,
-           summary="Get video Q&A results")
-async def get_video_qa_result(task_id: str):
-    """
-    Get the results of a completed video Q&A task.
-    
-    - **task_id**: The ID of the completed task
-    
-    Returns the video Q&A results including answer and clip if generated.
-    """
-    if task_id not in task_status:
-        raise HTTPException(status_code=404, detail=f"Task {task_id} not found")
-    
-    status_info = task_status[task_id]
-    
-    if status_info["status"] != "completed":
+    if task_info["status"] != "completed":
         raise HTTPException(
             status_code=400, 
-            detail=f"Task is {status_info['status']}, not completed"
+            detail=f"Task processing not complete. Current status: {task_info['status']}"
         )
     
-    if "result" not in status_info:
-        raise HTTPException(status_code=500, detail="No result available")
-    
-    return VideoQAResponse(**status_info["result"])
+    try:
+        # Extract transcript and video info
+        transcript_segments = task_info["transcript_info"]["segments"]
+        full_text = task_info["transcript_info"]["full_text"]
+        detected_language = task_info["transcript_info"]["language"]
+        video_path = task_info["video_info"]["path"]
+        video_info = {
+            "title": task_info["video_info"]["title"],
+            "description": task_info["video_info"]["description"]
+        }
+        
+        # Initialize retrieval indexes
+        await initialize_indexes(full_text)
+        
+        # Extract user message
+        user_input = request.message
+        
+        # Initialize variables
+        target_duration = None
+        custom_podcast_prompt = None
+        
+        # Identify query type - similar to your chatbot.py logic
+        query_type = "general"
+        
+        # Check for podcast-related requests
+        if re.search(r'podcast|conversation|discussion|dialogue|talk show|interview|audio', user_input.lower()):
+            # Extract any specific instructions for podcast style
+            style_match = re.search(r'(casual|funny|serious|educational|debate|friendly|professional|entertaining)', user_input.lower())
+            format_match = re.search(r'style[:]?\s*(\w+)', user_input.lower())
+            
+            # Determine podcast style from the request
+            if style_match:
+                podcast_style = style_match.group(1)
+                custom_podcast_prompt = f"Make the podcast {podcast_style} in tone and style."
+                
+            if format_match:
+                podcast_format = format_match.group(1)
+                if custom_podcast_prompt:
+                    custom_podcast_prompt += f" Follow a {podcast_format} format."
+                else:
+                    custom_podcast_prompt = f"Follow a {podcast_format} format."
+            
+            query_type = "podcast"
+            
+            # Return a message about podcast generation with instructions to use the dedicated endpoint
+            return ChatResponse(
+                response="To generate a podcast, please use the dedicated podcast endpoint: POST /api/podcast with your task_id and optional style parameter.",
+                response_type="podcast_info",
+                extra_data={
+                    "instruction": "Use the podcast endpoint",
+                    "style": custom_podcast_prompt
+                }
+            )
+            
+        elif re.search(r'english subtitles|add subtitles|create subtitles|subtitle', user_input.lower()):
+            query_type = "english_subtitles"
+            return ChatResponse(
+                response="To generate English subtitles, please use the dedicated subtitles endpoint: POST /api/subtitles with your task_id.",
+                response_type="subtitles_info"
+            )
+            
+        elif re.search(r'study guide|study material|learning guide|course notes', user_input.lower()):
+            query_type = "study_guide"
+            return ChatResponse(
+                response="To generate a study guide, please use the dedicated study guide endpoint: POST /api/study-guide with your task_id.",
+                response_type="study_guide_info"
+            )
+            
+        elif re.search(r'meeting minutes|minutes|meeting notes|meeting summary', user_input.lower()):
+            query_type = "meeting_minutes"
+            # For meeting minutes, we can actually generate a summary response here
+            # This gives a preview of what the full meeting minutes would contain
+            retrieved_docs = await retrieve_chunks(full_text, "meeting summary key points", k=5)
+            references = "\n\n".join([doc.page_content for doc in retrieved_docs])
+            
+            meeting_summary = await generate_enhanced_response(
+                "summary", 
+                references, 
+                "Create a brief summary of this meeting focusing on key decisions and action items", 
+                detected_language
+            )
+            
+            return ChatResponse(
+                response=f"Meeting Minutes Preview:\n\n{meeting_summary}\n\nTo generate complete meeting minutes, please use the dedicated endpoint: POST /api/meeting-minutes with your task_id.",
+                response_type="meeting_minutes_preview"
+            )
+            
+        elif re.search(r'english dub|dub|dubbing|voice over|translate audio|translate voice', user_input.lower()):
+            query_type = "english_dub"
+            
+            # Check if dubbing is applicable (non-English video)
+            if detected_language == "en":
+                return ChatResponse(
+                    response="The video is already in English, so dubbing is not necessary.",
+                    response_type="dubbing_info"
+                )
+            else:
+                return ChatResponse(
+                    response=f"To generate English dubbing for this {detected_language} video, please use the dedicated dubbing endpoint: POST /api/dub with your task_id.",
+                    response_type="dubbing_info"
+                )
+            
+        elif re.search(r'^(extract\s+clips?|extracting\s+clips?|interactive(\s+q/?a)?|video\s+q/?a|create\s+clips?|find\s+clips?|clip\s+extract|get\s+clips?|show\s+clips?|video\s+answer|answer\s+with\s+clip)s?:?', user_input, re.IGNORECASE):
+            query_type = "interactive_qa"
+            # Extract the actual question by removing the trigger phrase
+            actual_question = re.sub(r'^(extract\s+clips?|extracting\s+clips?|interactive(\s+q/?a)?|video\s+q/?a|create\s+clips?|find\s+clips?|clip\s+extract|get\s+clips?|show\s+clips?|video\s+answer|answer\s+with\s+clip)s?:?\s*', '', user_input, flags=re.IGNORECASE)
+            
+            return ChatResponse(
+                response=f"To get an answer with video clips for your question: '{actual_question}', please use the dedicated interactive Q&A endpoint: POST /api/interactive-qa with your task_id and question.",
+                response_type="interactive_qa_info",
+                extra_data={
+                    "question": actual_question
+                }
+            )
+            
+        # Check for highlight-related requests since they can overlap with other patterns
+        elif re.search(r'highlight|best parts|important parts', user_input.lower()):
+            # Extract duration information if explicitly specified
+            duration_match = re.search(r'(\d+)\s*(minute|min|minutes|second|sec|seconds)', user_input.lower())
+
+            if duration_match:
+                amount = int(duration_match.group(1))
+                unit = duration_match.group(2)
+                if unit.startswith('minute') or unit.startswith('min'):
+                    target_duration = amount * 60
+                else:
+                    target_duration = amount
+                query_type = "custom_duration_highlights"
+            # Check for custom instructions in the request
+            elif re.search(r'(where|ensure|keep|include|focus on|select|show|add|include|take|at timestamp|first moment|last moment|beginning|end|intro|conclusion)', user_input.lower()):
+                query_type = "custom_prompt_highlights"
+            else:
+                query_type = "highlights"
+                
+            # Check if user requested fast generation explicitly
+            use_algorithmic = "fast" in user_input.lower() or "quick" in user_input.lower() or "algorithmic" in user_input.lower()
+                
+            return ChatResponse(
+                response=f"To generate video highlights, please use the dedicated highlights endpoint: POST /api/highlights with your task_id, duration_seconds: {target_duration if target_duration else 'null'}, custom_prompt: {user_input if query_type == 'custom_prompt_highlights' else 'null'}, and use_algorithmic: {str(use_algorithmic).lower()}.",
+                response_type="highlights_info",
+                extra_data={
+                    "duration_seconds": target_duration,
+                    "custom_prompt": user_input if query_type == "custom_prompt_highlights" else None,
+                    "use_algorithmic": use_algorithmic
+                }
+            )
+            
+        elif any(term in user_input.lower() for term in ["timeline", "key moments", "chapters", "sections", "timestamps"]):
+            query_type = "key_moments"
+            
+            # For key moments, we can generate them here
+            try:
+                # Get full transcript text
+                full_timestamped_transcript = full_text  # This might need adjustment based on your full_text format
+                
+                # Generate key moments
+                key_moments_structured, key_moments_formatted = await generate_key_moments_algorithmically(
+                    transcript_segments, 
+                    full_timestamped_transcript,
+                    detected_language
+                )
+                
+                # Create a response in the detected language
+                if detected_language == "en":
+                    response_prefix = "Here are the key moments in the video:\n\n"
+                else:
+                    # This would need to be translated in a production implementation
+                    response_prefix = "Here are the key moments in the video:\n\n"
+                
+                return ChatResponse(
+                    response=f"{response_prefix}{key_moments_formatted}",
+                    response_type="key_moments",
+                    extra_data={
+                        "key_moments": key_moments_structured
+                    }
+                )
+            except Exception as e:
+                # If there's an error generating key moments, return a generic response
+                return ChatResponse(
+                    response=f"I encountered an error generating key moments: {str(e)}",
+                    response_type="error"
+                )
+                
+        elif any(term in user_input.lower() for term in ["summarize", "summary", "overview", "what is the video about"]):
+            query_type = "summary"
+            
+            # For summary, we'll use the existing logic but return the result directly
+            retrieved_docs = await retrieve_chunks(full_text, user_input, k=5)
+            references = "\n\n".join([doc.page_content for doc in retrieved_docs])
+            
+            summary = await generate_enhanced_response(
+                query_type, 
+                references, 
+                user_input, 
+                detected_language
+            )
+            
+            return ChatResponse(
+                response=summary,
+                response_type="summary"
+            )
+            
+        elif any(term in user_input.lower() for term in ["key topics", "main points", "main ideas", "central themes"]):
+            query_type = "key_topics"
+            
+            # For key topics, use the enhanced response function
+            retrieved_docs = await retrieve_chunks(full_text, user_input, k=5)
+            references = "\n\n".join([doc.page_content for doc in retrieved_docs])
+            
+            key_topics = await generate_enhanced_response(
+                query_type, 
+                references, 
+                user_input, 
+                detected_language
+            )
+            
+            return ChatResponse(
+                response=key_topics,
+                response_type="key_topics"
+            )
+            
+        elif re.search(r'at (\d{1,2}:?\d{1,2}:?\d{0,2})|timestamp|(\d{1,2}:\d{2})', user_input.lower()):
+            query_type = "specific_timestamp"
+            
+            # For specific timestamp queries, use the enhanced response function
+            retrieved_docs = await retrieve_chunks(full_text, user_input, k=3)
+            references = "\n\n".join([doc.page_content for doc in retrieved_docs])
+            
+            timestamp_info = await generate_enhanced_response(
+                query_type, 
+                references, 
+                user_input, 
+                detected_language
+            )
+            
+            return ChatResponse(
+                response=timestamp_info,
+                response_type="specific_timestamp"
+            )
+            
+        elif re.search(r'reel|short clip|tiktok|instagram|social media', user_input.lower()):
+            query_type = "reel"
+            
+            # Check if user requested fast generation
+            use_algorithmic = "fast" in user_input.lower() or "quick" in user_input.lower() or "algorithmic" in user_input.lower()
+            
+            return ChatResponse(
+                response=f"To generate a short reel for social media, please use the dedicated highlights endpoint: POST /api/highlights with your task_id, duration_seconds: 60, is_reel: true, and use_algorithmic: {str(use_algorithmic).lower()}.",
+                response_type="reel_info",
+                extra_data={
+                    "duration_seconds": 60,
+                    "is_reel": True,
+                    "use_algorithmic": use_algorithmic
+                }
+            )
+            
+        else:
+            # For general questions, use the standard retrieval and generation approach
+            retrieved_docs = await retrieve_chunks(full_text, user_input, k=3)
+            references = "\n\n".join([doc.page_content for doc in retrieved_docs])
+            
+            response = await generate_enhanced_response(
+                "general", 
+                references, 
+                user_input, 
+                detected_language
+            )
+            
+            return ChatResponse(
+                response=response,
+                response_type="general"
+            )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating response: {str(e)}")
+
+# Additional endpoints for specific features will be handled by their respective routers
