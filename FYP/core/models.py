@@ -14,6 +14,7 @@ class YouTubeRequest(BaseModel):
 class TranscriptionResponse(BaseModel):
     transcript_segments: List[List[Union[float, str]]] = Field(..., description="List of transcript segments [start_time, end_time, text]")
     full_transcript: str = Field(..., description="Full transcript text")
+    raw_text: Optional[str] = Field(None, description="Raw text without timestamps")
     detected_language: str = Field(..., description="Detected language code")
     transcript_file_url: Optional[str] = Field(None, description="URL to download the transcript file")
 

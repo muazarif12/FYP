@@ -147,11 +147,11 @@ async def download_and_process_youtube(task_id: str, youtube_url: str):
         detected_language = None
         
         if youtube_id:
-            transcript_segments, full_transcript, detected_language = await get_youtube_transcript(youtube_id)
+            transcript_segments, full_transcript, detected_language, raw_text = await get_youtube_transcript(youtube_id)
         
         # If no YouTube transcript, transcribe with Whisper
         if not transcript_segments:
-            transcript_segments, full_transcript, detected_language = await transcribe_video(video_path)
+            transcript_segments, full_transcript, detected_language, raw_text = await transcribe_video(video_path)
         
         if not transcript_segments:
             task_storage[task_id] = {
@@ -199,7 +199,7 @@ async def process_uploaded_video(task_id: str, file_path: str):
         video_title = file_name
         
         # Generate transcript
-        transcript_segments, full_transcript, detected_language = await transcribe_video(file_path)
+        transcript_segments, full_transcript, detected_language, raw_text = await transcribe_video(file_path)
         
         if not transcript_segments:
             task_storage[task_id] = {
