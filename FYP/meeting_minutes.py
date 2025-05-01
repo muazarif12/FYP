@@ -1,3 +1,4 @@
+import functools
 import time
 import re
 import ollama
@@ -7,6 +8,7 @@ import json
 from constants import OUTPUT_DIR
 from logger_config import logger
 from utils import format_timestamp
+import google.generativeai as genai
 
 async def detect_meeting_type(transcript_text):
     """
@@ -113,9 +115,330 @@ async def process_timestamped_transcript(transcript_text):
     
     return processed_text
 
+# async def generate_meeting_minutes(transcript_segments, video_info, detected_language="en", timestamped_transcript=None):
+#     """
+#     Generate structured meeting minutes from video transcript.
+    
+#     Args:
+#         transcript_segments: List of transcript segments (start_time, end_time, text)
+#         video_info: Dictionary with video metadata
+#         detected_language: Language code for the transcript
+#         timestamped_transcript: Optional timestamped transcript for better processing
+        
+#     Returns:
+#         Dictionary containing structured meeting minutes
+#     """
+#     start_time = time.time()
+    
+#     # Extract text from transcript segments
+#     full_text = " ".join([seg[2] for seg in transcript_segments])
+    
+#     # Process timestamped transcript if available
+#     if timestamped_transcript:
+#         processed_transcript = await process_timestamped_transcript(timestamped_transcript)
+#         # Use both for better context
+#         combined_text = f"TIMESTAMPED TRANSCRIPT:\n{processed_transcript}\n\nFULL TEXT:\n{full_text}"
+#     else:
+#         combined_text = full_text
+    
+#     # Truncate very long transcripts to avoid token limits
+#     max_length = 12000  # Characters
+#     if len(combined_text) > max_length:
+#         logger.info(f"Transcript too long ({len(combined_text)} chars), truncating to {max_length} chars")
+#         if timestamped_transcript:
+#             # Keep more of the timestamped portion as it's more structured
+#             third = max_length // 3
+#             processed_part = processed_transcript[:third*2]
+#             full_part = full_text[:third]
+#             combined_text = f"TIMESTAMPED TRANSCRIPT:\n{processed_part}\n\nFULL TEXT:\n{full_part}"
+#         else:
+#             # Regular truncation strategy
+#             third = max_length // 3
+#             combined_text = combined_text[:third] + "..." + combined_text[len(combined_text)//2-third//2:len(combined_text)//2+third//2] + "..." + combined_text[-third:]
+    
+#     # Extract meeting date from transcript if possible
+#     date_pattern = r'(?:january|february|march|april|may|june|july|august|september|october|november|december)\s+\d{1,2}(?:st|nd|rd|th)?\s*,?\s*\d{4}'
+#     date_matches = re.findall(date_pattern, combined_text.lower())
+#     meeting_date = date_matches[0] if date_matches else "Date not specified"
+    
+#     # Detect meeting type
+#     meeting_type, confidence = await detect_meeting_type(combined_text)
+#     logger.info(f"Detected meeting type: {meeting_type} (confidence: {confidence:.2f})")
+    
+#     # Extract participants more effectively
+#     participants = extract_participants(combined_text)
+    
+#     # Determine meeting information
+#     video_title = video_info.get('title', 'Unknown Meeting')
+#     video_duration = transcript_segments[-1][1] if transcript_segments else 600  # Default to 10 minutes
+    
+#     # Create meeting prompt based on meeting type
+#     if meeting_type == "review":
+#         # Enhanced prompt for review meetings with more specific guidance
+#         prompt = f"""
+#         You are an expert meeting minutes generator specializing in engineering and business review meetings.
+#         Given the transcript of a meeting, create professional, structured meeting minutes that capture all essential information.
+        
+#         MEETING DETAILS:
+#         - Title: "{video_title}"
+#         - Date: {meeting_date}
+#         - Duration: {video_duration:.1f} seconds
+#         - Meeting Type: {meeting_type.capitalize()} Meeting
+        
+#         PARTICIPANTS IDENTIFIED:
+#         {', '.join(participants) if participants else "Participants not explicitly identified"}
+        
+#         VERY IMPORTANT INSTRUCTIONS:
+#         1. EXTRACT ALL PARTICIPANTS: Identify every person mentioned in the transcript, especially speakers.
+#            Look for names followed by speaking turns, references to individuals by name, and people assigned tasks.
+        
+#         2. IDENTIFY EVERY AGENDA ITEM: The meeting likely discusses multiple topics.
+#            Look for: 
+#            - Numbered agenda items mentioned explicitly
+#            - Topic introductions or transitions
+#            - Distinct discussion segments on different subjects
+#            - Questions or issues raised for discussion
+        
+#         3. CAPTURE ALL METRICS AND KPIs: Identify metrics discussed including:
+#            - Performance indicators with specific values
+#            - Trends and comparisons to previous periods
+#            - Status updates (below/above target, improving/declining)
+#            - Any numerical measurements of business or technical performance
+        
+#         4. RECORD ALL DECISIONS: Capture every decision made, including:
+#            - Explicit statements of decisions ("we decided to...")
+#            - Agreements reached after discussion
+#            - Approvals or rejections of proposals
+#            - Consensus statements on future direction
+        
+#         5. IDENTIFY ALL ACTION ITEMS: Find every task assignment:
+#            - Who is assigned to do what
+#            - Due dates or timeframes if specified
+#            - The context and rationale for each task
+#            - Follow-up actions mentioned
+        
+#         TRANSCRIPT CONTENT:
+#         {combined_text}
+        
+#         Generate comprehensive meeting minutes in this JSON structure:
+#         {{
+#           "title": "Meeting Minutes: {video_title}",
+#           "date": "{meeting_date}",
+#           "duration": "{int(video_duration / 60)} minutes",
+#           "participants": [
+#             "List all participant names from the transcript - be thorough"
+#           ],
+#           "agenda_items": [
+#             {{
+#               "topic": "First agenda item with item number if available",
+#               "discussion": "Detailed summary of what was discussed on this topic",
+#               "speakers": ["People who spoke on this topic"]
+#             }},
+#             {{
+#               "topic": "Second agenda item",
+#               "discussion": "Detailed summary of what was discussed",
+#               "speakers": ["People who spoke on this topic"]
+#             }}
+#           ],
+#           "key_metrics_discussed": [
+#             {{
+#               "metric": "Name of the metric or KPI discussed",
+#               "status": "Current status as mentioned in the meeting",
+#               "details": "Comprehensive details including numbers, trends, and context"
+#             }}
+#           ],
+#           "action_items": [
+#             {{
+#               "task": "Specific task to be done",
+#               "assigned_to": "Person assigned to the task",
+#               "due_date": "Due date if mentioned or 'Not specified'",
+#               "context": "Why this task is needed and any relevant details"
+#             }}
+#           ],
+#           "decisions": [
+#             "First decision made in clear, specific language",
+#             "Second decision made in clear, specific language"
+#           ],
+#           "next_steps": [
+#             "First follow-up action with any assigned owner",
+#             "Second follow-up action with any assigned owner"
+#           ]
+#         }}
+#         """
+#     else:
+#         # Enhanced prompt for other meeting types
+#         prompt = f"""
+#         You are an expert meeting minutes generator. Given the transcript of a meeting, create professional, 
+#         structured meeting minutes that capture all essential information.
+        
+#         MEETING DETAILS:
+#         - Title: "{video_title}"
+#         - Date: {meeting_date}
+#         - Duration: {video_duration:.1f} seconds
+#         - Meeting Type: {meeting_type.capitalize()} Meeting
+        
+#         PARTICIPANTS IDENTIFIED:
+#         {', '.join(participants) if participants else "Participants not explicitly identified"}
+        
+#         VERY IMPORTANT INSTRUCTIONS:
+#         1. EXTRACT ALL PARTICIPANTS: Identify every person mentioned in the transcript.
+#            Look for names of speakers and references to individuals.
+        
+#         2. IDENTIFY MAIN TOPICS: The meeting likely covers several important topics.
+#            Look for topic shifts, discussion themes, and key conversation points.
+        
+#         3. CAPTURE KEY POINTS: For each topic, identify the most important information:
+#            - Main statements and arguments
+#            - Supporting details and examples
+#            - Questions raised and responses given
+#            - Important announcements or updates
+        
+#         4. RECORD ALL DECISIONS: Capture every decision mentioned:
+#            - Explicit decisions made during the meeting
+#            - Agreements reached after discussion
+#            - Conclusions on topics or issues
+        
+#         5. IDENTIFY ALL ACTION ITEMS: Find all tasks assigned:
+#            - Who is responsible for what task
+#            - Any deadlines mentioned
+#            - The purpose of each task
+        
+#         TRANSCRIPT CONTENT:
+#         {combined_text}
+        
+#         Generate comprehensive meeting minutes following this exact JSON structure:
+#         {{
+#           "title": "Meeting Minutes: {video_title}",
+#           "date": "{meeting_date}",
+#           "duration": "{int(video_duration / 60)} minutes",
+#           "participants": [
+#             "List all participants mentioned in the transcript - be thorough"
+#           ],
+#           "agenda": [
+#             "First main topic discussed in the meeting",
+#             "Second main topic discussed in the meeting"
+#           ],
+#           "key_points": [
+#             {{
+#               "topic": "First important topic",
+#               "points": [
+#                 "First key point about this topic",
+#                 "Second key point about this topic",
+#                 "Third key point about this topic"
+#               ],
+#               "timestamp": "Approximate timestamp if available"
+#             }},
+#             {{
+#               "topic": "Second important topic",
+#               "points": [
+#                 "First key point about this topic",
+#                 "Second key point about this topic"
+#               ],
+#               "timestamp": "Approximate timestamp if available"
+#             }}
+#           ],
+#           "action_items": [
+#             {{
+#               "task": "Specific task to be done",
+#               "assigned_to": "Person/team assigned",
+#               "due_date": "Due date if mentioned, otherwise 'Not specified'",
+#               "notes": "Any additional context or information"
+#             }}
+#           ],
+#           "decisions": [
+#             "First decision made during the meeting",
+#             "Second decision made during the meeting"
+#           ],
+#           "next_meeting": "Details about the next meeting if mentioned, otherwise 'Not specified'"
+#         }}
+#         """
+    
+#     # Add JSON output instruction to ensure proper format
+#     prompt += """
+    
+#     IMPORTANT GUIDELINES:
+#     1. Focus on accuracy - only include information from the transcript
+#     2. Format your response as VALID JSON only - this is critical
+#     3. Do NOT use "//", "..." or any comments in the JSON
+#     4. Use empty arrays [] for sections with no content
+#     5. Return only the JSON object, nothing else
+#     6. Be thorough and comprehensive - capture all important meeting content
+#     7. Make sure to extract specific, detailed information rather than generic statements
+#     """
+    
+#     try:
+#         logger.info("Generating meeting minutes with LLM...")
+        
+#         # Run Ollama model with explicit instruction for JSON output
+#         response = ollama.chat(
+#             model="deepseek-r1:7b",
+#             messages=[
+#                 {"role": "system", "content": "You are a meeting summarization assistant. You create detailed, comprehensive meeting minutes in JSON format."},
+#                 {"role": "user", "content": prompt}
+#             ]
+#         )
+        
+#         end_time = time.time()
+#         logger.info(f"Time taken to generate meeting minutes: {end_time - start_time:.4f} seconds")
+        
+#         raw_content = response["message"]["content"]
+        
+#         # Add a simpler JSON extraction method first - look for content between braces
+#         minutes_data = extract_json(raw_content)
+        
+#         # If JSON parsing fails, use the fallback structure
+#         if not minutes_data:
+#             logger.warning("Failed to parse meeting minutes as JSON, creating basic structure")
+            
+#             # Create an improved fallback structure with some extracted info
+#             if meeting_type == "review":
+#                 minutes_data = {
+#                     "title": f"Meeting Minutes: {video_title}",
+#                     "date": meeting_date,
+#                     "duration": f"{int(video_duration / 60)} minutes",
+#                     "participants": participants if participants else ["Participants not explicitly identified"],
+#                     "agenda_items": [
+#                         {
+#                             "topic": "Meeting Overview",
+#                             "discussion": "Review of key metrics, issues, and proposals",
+#                             "speakers": extract_main_speakers(combined_text) or ["Various participants"]
+#                         }
+#                     ],
+#                     "key_metrics_discussed": extract_metrics(combined_text),
+#                     "action_items": extract_action_items(combined_text),
+#                     "decisions": extract_decisions(combined_text) or ["No clear decisions identified"],
+#                     "next_steps": ["Follow up on discussed items"]
+#                 }
+#             else:
+#                 minutes_data = {
+#                     "title": f"Meeting Minutes: {video_title}",
+#                     "date": meeting_date,
+#                     "duration": f"{int(video_duration / 60)} minutes",
+#                     "participants": participants if participants else ["Participants not explicitly identified"],
+#                     "agenda": ["Topics discussed in meeting"],
+#                     "key_points": [{"topic": "General Discussion", "points": ["See transcript for details"], "timestamp": "00:00:00"}],
+#                     "action_items": extract_action_items(combined_text),
+#                     "decisions": extract_decisions(combined_text) or ["No clear decisions identified"],
+#                     "next_meeting": "Not specified"
+#                 }
+            
+#         return minutes_data
+        
+#     except Exception as e:
+#         logger.error(f"Error generating meeting minutes: {e}")
+#         # Return basic structure in case of error
+#         return {
+#             "title": f"Meeting Minutes: {video_title}",
+#             "error": f"Failed to generate meeting minutes: {str(e)}",
+#             "duration": f"{int(video_duration / 60)} minutes",
+#             "participants": participants if participants else ["Error processing participants"],
+#             "key_points": [{"topic": "Error", "points": ["Error processing transcript"], "timestamp": "00:00:00"}]
+#         }
+
+
 async def generate_meeting_minutes(transcript_segments, video_info, detected_language="en", timestamped_transcript=None):
     """
-    Generate structured meeting minutes from video transcript.
+    Generate structured meeting minutes from video transcript using Google's Gemini API.
     
     Args:
         transcript_segments: List of transcript segments (start_time, end_time, text)
@@ -127,6 +450,10 @@ async def generate_meeting_minutes(transcript_segments, video_info, detected_lan
         Dictionary containing structured meeting minutes
     """
     start_time = time.time()
+    
+    # Configure Gemini API
+    GOOGLE_API_KEY = "AIzaSyCAtIMQN7gp0p3WwdUF3tU_PLrECvFdskE"
+    genai.configure(api_key=GOOGLE_API_KEY)
     
     # Extract text from transcript segments
     full_text = " ".join([seg[2] for seg in transcript_segments])
@@ -365,21 +692,69 @@ async def generate_meeting_minutes(transcript_segments, video_info, detected_lan
     """
     
     try:
-        logger.info("Generating meeting minutes with LLM...")
+        logger.info("Generating meeting minutes with Gemini LLM...")
         
-        # Run Ollama model with explicit instruction for JSON output
-        response = ollama.chat(
-            model="deepseek-r1:7b",
-            messages=[
-                {"role": "system", "content": "You are a meeting summarization assistant. You create detailed, comprehensive meeting minutes in JSON format."},
-                {"role": "user", "content": prompt}
-            ]
+        # Initialize the model for generating content
+        model = genai.GenerativeModel(model_name="models/gemini-2.0-flash")
+        
+        # Run Gemini model with system message and user prompt
+        # Note: Using async pattern to prevent blocking, similar to original implementation
+        loop = asyncio.get_event_loop()
+        
+        # Prepare messages in a format compatible with Gemini API
+        generation_config = {
+            "temperature": 0.2,  # Lower temperature for more factual and structured output
+            "top_p": 0.8,
+            "top_k": 40,
+            "max_output_tokens": 8192,  # Ensure sufficient tokens for detailed minutes
+        }
+        
+        safety_settings = [
+            {
+                "category": "HARM_CATEGORY_HARASSMENT",
+                "threshold": "BLOCK_ONLY_HIGH"
+            },
+            {
+                "category": "HARM_CATEGORY_HATE_SPEECH",
+                "threshold": "BLOCK_ONLY_HIGH"
+            },
+            {
+                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                "threshold": "BLOCK_ONLY_HIGH"
+            },
+            {
+                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                "threshold": "BLOCK_ONLY_HIGH"
+            }
+        ]
+        
+        # Use system message and user content in Gemini chat format
+        chat = model.start_chat(history=[
+            {
+                "role": "user",
+                "parts": ["You are a meeting summarization assistant. You create detailed, comprehensive meeting minutes in JSON format."]
+            },
+            {
+                "role": "model",
+                "parts": ["I'll create detailed JSON-formatted meeting minutes from the transcript you provide. I'll extract participants, agenda items, key points, decisions, and action items, ensuring the output is in valid JSON format with all the required sections."]
+            }
+        ])
+        
+        # Send the actual prompt with transcript content
+        response = await loop.run_in_executor(
+            None,
+            functools.partial(
+                chat.send_message,
+                prompt,
+                generation_config=generation_config,
+                safety_settings=safety_settings
+            )
         )
         
         end_time = time.time()
         logger.info(f"Time taken to generate meeting minutes: {end_time - start_time:.4f} seconds")
         
-        raw_content = response["message"]["content"]
+        raw_content = response.text
         
         # Add a simpler JSON extraction method first - look for content between braces
         minutes_data = extract_json(raw_content)
