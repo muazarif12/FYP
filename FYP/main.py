@@ -663,6 +663,46 @@ Try saying "meeting minutes" to generate notes for a meeting recording!
                 if isinstance(subtitling_stats, str):
                     print(f"Reason: {subtitling_stats}")
 
+        elif query_type == "meeting_minutes":
+            print("Generating meeting minutes from the video content. This may take a few minutes...")
+            
+            if meeting_minutes_generated and meeting_minutes_path:
+                print("Using previously generated meeting minutes.")
+                print(f"Meeting minutes available at: {meeting_minutes_path}")
+                
+                # Display formatted minutes preview
+                if meeting_minutes_data:
+                    print("\nMeeting Minutes Preview:")
+                    print(format_minutes_for_display(meeting_minutes_data))
+            else:
+                # Generate new meeting minutes
+                minutes_data = await generate_meeting_minutes(
+                    transcript_segments,
+                    video_info,
+                    detected_language=detected_language,
+                    timestamped_transcript=full_timestamped_transcript
+                )
+                
+                if minutes_data:
+                    # Save meeting minutes to file
+                    minutes_path = await save_meeting_minutes(minutes_data, format="md")
+                    
+                    if minutes_path:
+                        meeting_minutes_generated = True
+                        meeting_minutes_data = minutes_data
+                        meeting_minutes_path = minutes_path
+                        
+                        print(f"\nMeeting minutes generated successfully!")
+                        print(f"Saved to: {minutes_path}")
+                        
+                        # Display formatted preview
+                        print("\nMeeting Minutes Preview:")
+                        print(format_minutes_for_display(minutes_data))
+                    else:
+                        print("Sorry, there was an error saving the meeting minutes.")
+                else:
+                    print("Sorry, I couldn't generate meeting minutes for this video. Please try again.")
+
         # Handle key moments/timeline requests
         elif query_type == "key_moments":
             # Generate key moments only when requested (lazy loading)
