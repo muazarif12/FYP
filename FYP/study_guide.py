@@ -496,11 +496,34 @@ def format_study_guide_for_display(study_guide):
     return formatted_text
 
 
+# async def save_study_guide(formatted_study_guide, video_title):
+#     """Save the formatted study guide to a text file."""
+#     try:
+#         # Create output directory if it doesn't exist
+#         output_dir = "study_guides"
+#         os.makedirs(output_dir, exist_ok=True)
+        
+#         # Create a file name based on the video title
+#         safe_title = re.sub(r'[^\w\s-]', '', video_title).strip().replace(' ', '_')
+#         file_name = f"{safe_title}_study_guide.md"
+#         file_path = os.path.join(output_dir, file_name)
+        
+#         # Write to file
+#         with open(file_path, 'w', encoding='utf-8') as f:
+#             f.write(formatted_study_guide)
+        
+#         print(f"Study guide saved to: {file_path}")
+#         return file_path
+        
+#     except Exception as e:
+#         print(f"Error saving study guide: {e}")
+#         return None
+
 async def save_study_guide(formatted_study_guide, video_title):
     """Save the formatted study guide to a text file."""
     try:
-        # Create output directory if it doesn't exist
-        output_dir = "study_guides"
+        # Use OUTPUT_DIR (downloads) defined in main.py
+        output_dir = os.path.join("downloads", "study_guides")  # Ensures study_guides is inside downloads
         os.makedirs(output_dir, exist_ok=True)
         
         # Create a file name based on the video title
@@ -518,6 +541,7 @@ async def save_study_guide(formatted_study_guide, video_title):
     except Exception as e:
         print(f"Error saving study guide: {e}")
         return None
+
 
 
 async def generate_faq(transcript_segments, video_info):
