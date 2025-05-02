@@ -73,7 +73,7 @@ async def generate_response_with_gemini_async(prompt_text, language_code="en"):
        
     except Exception as e:
         print(f"Error: {e}")
-        return "An error occurred while generating the response with Gemini."
+        return "An error occurred while generating the response."
 
 # Function to generate response using Ollama's chat functionality with improved prompting and caching
 async def generate_response_async(prompt_text, language_code="en"):
