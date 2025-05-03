@@ -83,11 +83,11 @@ async def transcribe_video(video_path):
     detected_language = result['language']
     print(f"Detected language: {detected_language}")
 
-    if detected_language != "en":
-        print(f"Non-English transcript detected. Sending to LLM for correction.")
-        result["text"] = await generate_response_async(
-            f"Please fix the following transcription for grammar and clarity: {result['text']}"
-        )
+    # if detected_language != "en":
+    #     print(f"Non-English transcript detected. Sending to LLM for correction.")
+    #     result["text"] = await generate_response_async(
+    #         f"Please fix the following transcription for grammar and clarity: {result['text']}"
+    #     )
 
     # Build timestamped transcript
     full_transcript_with_timestamps = ""

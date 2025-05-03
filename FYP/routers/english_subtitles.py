@@ -38,252 +38,134 @@ class SubtitleAdjustRequest(BaseModel):
 
 @router.post("/subtitles", response_model=SubtitleResponse, tags=["Subtitles"])
 async def create_subtitles(request: SubtitleRequest, background_tasks: BackgroundTasks):
-    """
-    Generate English subtitles for the video.
-    
-    - **task_id**: Task ID from video processing
-    - **subtitle_format**: Format of the subtitle file (srt or vtt)
-    
-    Returns a task ID to track the subtitle generation.
-    """
     # Verify that the task exists and is completed
     if request.task_id not in task_storage:
         raise HTTPException(status_code=404, detail=f"Task {request.task_id} not found")
-    
     task_info = task_storage[request.task_id]
-    
     if task_info["status"] != "completed":
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Task processing not complete. Current status: {task_info['status']}"
-        )
-    
-    # Create a new task ID for this subtitle request
+        raise HTTPException(status_code=400, detail=f"Task not complete. Current status: {task_info['status']}")
+
     subtitle_task_id = str(uuid.uuid4())
-    
     try:
-        # Start subtitle generation in background
         background_tasks.add_task(
             process_subtitle_generation,
             subtitle_task_id,
             request.task_id,
             request.subtitle_format
         )
-        
-        # Initialize task status
         subtitle_task_storage[subtitle_task_id] = {
             "status": "processing",
             "message": "Generating subtitles..."
         }
-        
         return SubtitleResponse(
             subtitle_task_id=subtitle_task_id,
             status="processing",
             message="Your subtitles are being generated. Use the subtitle_task_id to check status and get results."
         )
-    
     except Exception as e:
-        subtitle_task_storage[subtitle_task_id] = {
-            "status": "failed",
-            "error": str(e)
-        }
+        subtitle_task_storage[subtitle_task_id] = {"status": "failed", "error": str(e)}
         raise HTTPException(status_code=500, detail=f"Error starting subtitle generation: {str(e)}")
 
 @router.get("/subtitles/status/{subtitle_task_id}", tags=["Subtitles"])
 async def check_subtitle_status(subtitle_task_id: str):
-    """
-    Check the status of a subtitle generation task.
-    
-    - **subtitle_task_id**: Subtitle task ID to check
-    
-    Returns the current status of the subtitle generation.
-    """
     if subtitle_task_id not in subtitle_task_storage:
         raise HTTPException(status_code=404, detail=f"Subtitle task {subtitle_task_id} not found")
-    
     return subtitle_task_storage[subtitle_task_id]
 
 @router.get("/subtitles/download/{subtitle_task_id}", tags=["Subtitles"])
 async def download_subtitles(subtitle_task_id: str):
-    """
-    Download the subtitle file.
-    
-    - **subtitle_task_id**: Subtitle task ID
-    
-    Returns the subtitle file.
-    """
     if subtitle_task_id not in subtitle_task_storage:
         raise HTTPException(status_code=404, detail=f"Subtitle task {subtitle_task_id} not found")
-    
     task_info = subtitle_task_storage[subtitle_task_id]
-    
     if task_info["status"] != "completed":
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Subtitle task not complete. Current status: {task_info['status']}"
-        )
-    
-    if "result" not in task_info or "subtitle_path" not in task_info["result"]:
-        raise HTTPException(status_code=404, detail="No subtitle file available for download")
-    
-    subtitle_path = task_info["result"]["subtitle_path"]
-    
-    if not os.path.exists(subtitle_path):
+        raise HTTPException(status_code=400, detail=f"Subtitle task not complete. Status: {task_info['status']}")
+    result = task_info.get("result", {})
+    subtitle_path = result.get("subtitle_path")
+    if not subtitle_path or not os.path.exists(subtitle_path):
         raise HTTPException(status_code=404, detail="Subtitle file not found")
-    
-    # Determine media type based on extension
     media_type = "application/x-subrip" if subtitle_path.endswith(".srt") else "text/vtt"
-    
-    return FileResponse(
-        subtitle_path,
-        media_type=media_type,
-        filename=os.path.basename(subtitle_path)
-    )
+    return FileResponse(subtitle_path, media_type=media_type, filename=os.path.basename(subtitle_path))
 
 @router.get("/subtitles/video/{subtitle_task_id}", tags=["Subtitles"])
 async def download_subtitled_video(subtitle_task_id: str):
-    """
-    Download the video with embedded subtitles.
-    
-    - **subtitle_task_id**: Subtitle task ID
-    
-    Returns the video file with embedded subtitles.
-    """
     if subtitle_task_id not in subtitle_task_storage:
         raise HTTPException(status_code=404, detail=f"Subtitle task {subtitle_task_id} not found")
-    
     task_info = subtitle_task_storage[subtitle_task_id]
-    
     if task_info["status"] != "completed":
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Subtitle task not complete. Current status: {task_info['status']}"
-        )
-    
-    if "result" not in task_info or "video_path" not in task_info["result"]:
-        raise HTTPException(status_code=404, detail="No subtitled video available for download")
-    
-    video_path = task_info["result"]["video_path"]
-    
-    if not os.path.exists(video_path):
+        raise HTTPException(status_code=400, detail=f"Subtitle task not complete. Status: {task_info['status']}")
+    result = task_info.get("result", {})
+    video_path = result.get("video_path")
+    if not video_path or not os.path.exists(video_path):
         raise HTTPException(status_code=404, detail="Subtitled video file not found")
-    
-    return FileResponse(
-        video_path,
-        media_type="video/mp4",
-        filename=os.path.basename(video_path)
-    )
+    return FileResponse(video_path, media_type="video/mp4", filename=os.path.basename(video_path))
 
 @router.post("/subtitles/adjust", response_model=SubtitleResponse, tags=["Subtitles"])
 async def adjust_subtitle_timing(request: SubtitleAdjustRequest, background_tasks: BackgroundTasks):
-    """
-    Adjust the timing of an existing subtitle file.
-    
-    - **subtitle_task_id**: ID of the existing subtitle task
-    - **offset_seconds**: Number of seconds to shift (positive = delay, negative = advance)
-    
-    Returns a new task ID for the adjusted subtitles.
-    """
-    # Verify that the subtitle task exists and is completed
     if request.subtitle_task_id not in subtitle_task_storage:
         raise HTTPException(status_code=404, detail=f"Subtitle task {request.subtitle_task_id} not found")
-    
-    source_task_info = subtitle_task_storage[request.subtitle_task_id]
-    
-    if source_task_info["status"] != "completed":
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Source subtitle task not complete. Current status: {source_task_info['status']}"
-        )
-    
-    if "result" not in source_task_info or "subtitle_path" not in source_task_info["result"]:
+    source_info = subtitle_task_storage[request.subtitle_task_id]
+    if source_info["status"] != "completed":
+        raise HTTPException(status_code=400, detail=f"Source subtitle task not complete. Status: {source_info['status']}")
+    if "result" not in source_info or "subtitle_path" not in source_info["result"]:
         raise HTTPException(status_code=404, detail="No subtitle file available to adjust")
-    
-    # Create a new task ID for this adjustment
+
     new_subtitle_task_id = str(uuid.uuid4())
-    
     try:
-        # Start subtitle adjustment in background
         background_tasks.add_task(
             process_subtitle_adjustment,
             new_subtitle_task_id,
             request.subtitle_task_id,
             request.offset_seconds
         )
-        
-        # Initialize task status
         subtitle_task_storage[new_subtitle_task_id] = {
             "status": "processing",
             "message": "Adjusting subtitle timing..."
         }
-        
         return SubtitleResponse(
             subtitle_task_id=new_subtitle_task_id,
             status="processing",
             message="Your subtitles are being adjusted. Use the new subtitle_task_id to check status and get results."
         )
-    
     except Exception as e:
-        subtitle_task_storage[new_subtitle_task_id] = {
-            "status": "failed",
-            "error": str(e)
-        }
+        subtitle_task_storage[new_subtitle_task_id] = {"status": "failed", "error": str(e)}
         raise HTTPException(status_code=500, detail=f"Error starting subtitle adjustment: {str(e)}")
 
 # Background task for generating subtitles
 async def process_subtitle_generation(subtitle_task_id: str, video_task_id: str, subtitle_format: str):
-    """Background task to generate subtitles for a video"""
     try:
-        subtitle_task_storage[subtitle_task_id] = {
-            "status": "processing",
-            "message": "Generating subtitles..."
-        }
-        
-        # Get video and transcript info from the original task
+        subtitle_task_storage[subtitle_task_id] = {"status": "processing", "message": "Generating subtitles..."}
         task_info = task_storage[video_task_id]
         video_path = task_info["video_info"]["path"]
         transcript_segments = task_info["transcript_info"]["segments"]
         detected_language = task_info["transcript_info"]["language"]
-        
-        # Create output directory for subtitles if it doesn't exist
+
         subtitles_dir = os.path.join(settings.OUTPUT_DIR, "subtitles")
         os.makedirs(subtitles_dir, exist_ok=True)
-        
-        # Generate subtitles
+
         subtitled_video_path, subtitle_path, stats = await create_english_subtitles(
-            video_path,
-            transcript_segments,
-            detected_language,
-            subtitles_dir
+            video_path, transcript_segments, detected_language, subtitles_dir
         )
-        
         if not subtitle_path:
-            subtitle_task_storage[subtitle_task_id] = {
-                "status": "failed",
-                "error": "Failed to generate subtitles"
-            }
+            subtitle_task_storage[subtitle_task_id] = {"status": "failed", "error": "Failed to generate subtitles"}
             return
-        
-        # Rename files to include task ID
+
         new_subtitle_filename = f"{subtitle_task_id}_subtitles.{subtitle_format}"
         new_subtitle_path = os.path.join(subtitles_dir, new_subtitle_filename)
-        
-        # Copy subtitle file
         shutil.copy(subtitle_path, new_subtitle_path)
-        
-        # If video with embedded subtitles was created, rename it too
+
         new_video_path = None
         if subtitled_video_path and os.path.exists(subtitled_video_path):
             new_video_filename = f"{subtitle_task_id}_subtitled.mp4"
             new_video_path = os.path.join(subtitles_dir, new_video_filename)
             shutil.copy(subtitled_video_path, new_video_path)
-        
-        # Store result info
+
+        # *** Store both original video and subtitled video ***
         subtitle_task_storage[subtitle_task_id] = {
             "status": "completed",
             "result": {
                 "subtitle_path": new_subtitle_path,
                 "video_path": new_video_path,
+                "original_video_path": video_path,
                 "original_language": detected_language,
                 "subtitle_format": subtitle_format,
                 "subtitle_url": f"/api/subtitles/download/{subtitle_task_id}",
@@ -291,7 +173,6 @@ async def process_subtitle_generation(subtitle_task_id: str, video_task_id: str,
                 "stats": stats
             }
         }
-        
     except Exception as e:
         import traceback
         subtitle_task_storage[subtitle_task_id] = {
@@ -302,55 +183,46 @@ async def process_subtitle_generation(subtitle_task_id: str, video_task_id: str,
 
 # Background task for adjusting subtitle timing
 async def process_subtitle_adjustment(new_subtitle_task_id: str, source_subtitle_task_id: str, offset_seconds: float):
-    """Background task to adjust timing of existing subtitles"""
     try:
-        subtitle_task_storage[new_subtitle_task_id] = {
-            "status": "processing",
-            "message": "Adjusting subtitle timing..."
-        }
-        
-        # Get source subtitle info
-        source_task_info = subtitle_task_storage[source_subtitle_task_id]
-        source_subtitle_path = source_task_info["result"]["subtitle_path"]
-        subtitle_format = source_task_info["result"]["subtitle_format"]
-        
-        # Create output directory for subtitles if it doesn't exist
+        subtitle_task_storage[new_subtitle_task_id] = {"status": "processing", "message": "Adjusting subtitle timing..."}
+        source = subtitle_task_storage[source_subtitle_task_id]["result"]
+        source_subtitle_path = source["subtitle_path"]
+        subtitle_format     = source["subtitle_format"]
+        original_video      = source.get("original_video_path")
+
         subtitles_dir = os.path.join(settings.OUTPUT_DIR, "subtitles")
         os.makedirs(subtitles_dir, exist_ok=True)
-        
-        # Adjust subtitle timing
+
         adjusted_subtitle_path = await adjust_subtitle_timing_by_offset(
             source_subtitle_path,
             offset_seconds,
             output_dir=subtitles_dir
         )
-        
         if not adjusted_subtitle_path:
-            subtitle_task_storage[new_subtitle_task_id] = {
-                "status": "failed",
-                "error": "Failed to adjust subtitle timing"
-            }
+            subtitle_task_storage[new_subtitle_task_id] = {"status": "failed", "error": "Failed to adjust timing"}
             return
-        
-        # Rename file to include task ID
+
         new_subtitle_filename = f"{new_subtitle_task_id}_adjusted.{subtitle_format}"
-        new_subtitle_path = os.path.join(subtitles_dir, new_subtitle_filename)
-        
-        # Copy file
+        new_subtitle_path     = os.path.join(subtitles_dir, new_subtitle_filename)
         shutil.copy(adjusted_subtitle_path, new_subtitle_path)
-        
-        # Store result info
+
+        # *** Burn the adjusted subtitles into a new video ***
+        new_video_path = None
+        if original_video:
+            new_video_path = embed_subtitles_in_video(original_video, new_subtitle_path, subtitles_dir)
+
         subtitle_task_storage[new_subtitle_task_id] = {
             "status": "completed",
             "result": {
                 "subtitle_path": new_subtitle_path,
+                "video_path": new_video_path,
                 "subtitle_format": subtitle_format,
                 "original_subtitle_task_id": source_subtitle_task_id,
                 "offset_applied": offset_seconds,
-                "subtitle_url": f"/api/subtitles/download/{new_subtitle_task_id}"
+                "subtitle_url": f"/api/subtitles/download/{new_subtitle_task_id}",
+                "video_url": f"/api/subtitles/video/{new_subtitle_task_id}" if new_video_path else None
             }
         }
-        
     except Exception as e:
         import traceback
         subtitle_task_storage[new_subtitle_task_id] = {
@@ -358,3 +230,54 @@ async def process_subtitle_adjustment(new_subtitle_task_id: str, source_subtitle
             "error": str(e),
             "traceback": traceback.format_exc()
         }
+
+import os
+import subprocess
+import logging
+
+logger = logging.getLogger("subtitles")
+
+def embed_subtitles_in_video(video_path, subtitle_path, output_dir):
+    """
+    Embed subtitles into a video file, logging any ffmpeg errors.
+    """
+    subtitled_dir = os.path.join(output_dir, "subtitled")
+    os.makedirs(subtitled_dir, exist_ok=True)
+
+    base, ext = os.path.splitext(os.path.basename(video_path))
+    output_path = os.path.join(subtitled_dir, f"{base}_subtitled{ext}")
+
+    # On Windows, ffmpeg prefers forward-slashes
+    subtitle_path_fixed = subtitle_path.replace('\\', '/')
+
+    # Build the ffmpeg command
+    vf_filter = f"subtitles={subtitle_path_fixed}"
+    cmd = [
+        "ffmpeg", "-y",
+        "-i", video_path,
+        "-vf", vf_filter,
+        "-c:a", "copy",
+        output_path
+    ]
+
+    logger.info("Running ffmpeg embed: %s", " ".join(cmd))
+    proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+    if proc.returncode != 0:
+        logger.error("ffmpeg primary failed: %s", proc.stderr)
+        # Try fallback syntax (some builds require quotes)
+        cmd_alt = [
+            "ffmpeg", "-y",
+            "-i", video_path,
+            "-vf", f"subtitles='{subtitle_path_fixed}'",
+            "-c:a", "copy",
+            output_path
+        ]
+        logger.info("Running ffmpeg fallback: %s", " ".join(cmd_alt))
+        proc2 = subprocess.run(cmd_alt, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if proc2.returncode != 0:
+            logger.error("ffmpeg fallback also failed: %s", proc2.stderr)
+            return None
+
+    logger.info("Embed succeeded, output at %s", output_path)
+    return output_path
