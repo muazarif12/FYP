@@ -4,7 +4,7 @@ import time
 import re
 from logger_config import logger
 from ffmpeg_check import verify_dependencies
-from gtts_audio_generator import generate_edge_tts
+# from gtts_audio_generator import generate_edge_tts
 from utils import format_timestamp
 import ollama
 
