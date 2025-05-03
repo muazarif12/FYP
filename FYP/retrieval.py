@@ -19,7 +19,8 @@ def get_embedding_model():
     if _embedding_model is None:
         # Use device="cuda" only if you have CUDA available, otherwise use "cpu"
         _embedding_model = HuggingFaceEmbeddings(
-            model_name="all-MiniLM-L6-v2", 
+            # model_name="all-MiniLM-L6-v2",
+            model_name="paraphrase-multilingual-MiniLM-L12-v2",
             model_kwargs={"device": "cuda"},
             encode_kwargs={"batch_size": 32, "normalize_embeddings": True}  # Batch processing for speed
         )
