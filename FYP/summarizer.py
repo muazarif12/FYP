@@ -1,3 +1,4 @@
+import os
 import re
 import time
 import ollama
@@ -5,11 +6,76 @@ from utils import format_timestamp
 import asyncio
 import hashlib
 import functools
+import google.generativeai as genai
+from dotenv import load_dotenv
 
 
 # Response cache to store previously generated responses
 _response_cache = {}
 _cache_size_limit = 100  # Limit cache size to prevent memory issues
+
+# this will look for a .env file in your project root
+load_dotenv()
+
+# now read the key from the environment
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+genai.configure(api_key=GOOGLE_API_KEY)
+
+# Function to generate response using Google's Gemini API with improved prompting and caching
+async def generate_response_with_gemini_async(prompt_text, language_code="en"):
+    """
+    Generate a response with Gemini API and caching to improve performance for repeated prompts.
+    """
+    # Create a cache key from the prompt and language
+    cache_key = hashlib.md5(f"{prompt_text}:{language_code}".encode()).hexdigest()
+   
+    # Check if response is in cache
+    if cache_key in _response_cache:
+        print("Using cached response ")
+        return _response_cache[cache_key]
+   
+    model_name = "models/gemini-2.0-flash"  # Choose appropriate model version
+   
+    try:
+        # Add language instruction to the prompt
+        language_instruction = ""
+        if language_code and language_code != "en":
+            language_instruction = f"Please respond in {language_code} language. "
+        enhanced_prompt = f"{language_instruction}{prompt_text}"
+        
+        start_time = time.time()  # Start time for query
+        
+        # Initialize the model
+        model = genai.GenerativeModel(model_name=model_name)
+        
+        # Run Gemini API call in a thread pool to prevent blocking
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            None,
+            functools.partial(
+                model.generate_content,
+                enhanced_prompt
+            )
+        )
+        
+        end_time = time.time()  # End time for query
+        print(f"Time taken for query: {end_time - start_time:.4f} seconds")
+       
+        result = response.text
+       
+        # Cache the response
+        if len(_response_cache) >= _cache_size_limit:
+            # Remove oldest entry if cache is full
+            oldest_key = next(iter(_response_cache))
+            del _response_cache[oldest_key]
+       
+        _response_cache[cache_key] = result
+       
+        return result
+       
+    except Exception as e:
+        print(f"Error: {e}")
+        return "An error occurred while generating the response."
 
 # Function to generate response using Ollama's chat functionality with improved prompting and caching
 async def generate_response_async(prompt_text, language_code="en"):
