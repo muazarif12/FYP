@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     # Feature flags
     ENABLE_YOUTUBE_API: bool = True
     ENABLE_VIDEO_UPLOAD: bool = True
+
+    # ✅ Add this line to fix the error
+    GOOGLE_API_KEY: str
     
     class Config:
         env_file = ".env"
