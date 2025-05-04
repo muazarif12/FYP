@@ -78,6 +78,7 @@ from routers import (
     english_dubbing,
     interactive_qa,
     meeting_minutes,
+    flashcards
 )
 
 # --- Configuration -----------------------------------------------------------
@@ -133,6 +134,8 @@ app.include_router(meeting_minutes.router, prefix="/api", tags=["Meeting Minutes
 app.include_router(study_guide.router, prefix="/api", tags=["Study Guide"])
 app.include_router(english_subtitles.router, prefix="/api", tags=["Subtitles"])
 app.include_router(english_dubbing.router, prefix="/api", tags=["Dubbing"])
+app.include_router(flashcards.router, prefix="/api", tags=["FlashCards"])
+
 
 
 # --- Health & Root -----------------------------------------------------------

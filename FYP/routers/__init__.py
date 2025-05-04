@@ -9,3 +9,4 @@ from . import english_subtitles
 from . import english_dubbing
 from . import interactive_qa
 from . import meeting_minutes
+from . import flashcards
