@@ -7,6 +7,7 @@ import asyncio
 import uuid
 import shutil
 
+from study_guide import generate_suggested_questions
 from core.config import settings
 
 # Import from utils router to access task storage
@@ -31,11 +32,60 @@ class StudyGuideResponse(BaseModel):
     status: str = "processing"
     message: str
 
+
+class SuggestedQuestionsRequest(BaseModel):  # Renamed from FaqRequest
+    task_id: str  # Task ID from video processing
+
+class SuggestedQuestionsResult(BaseModel):  # Renamed from FaqResult
+    questions: List[str]  # Changed to list of strings instead of dict
+
 class FaqRequest(BaseModel):
     task_id: str  # Task ID from video processing
 
 class FaqResult(BaseModel):
     questions: List[Dict[str, str]]
+
+
+
+
+@router.post("/suggested-questions", response_model=SuggestedQuestionsResult, tags=["Chatbot"])  # Updated endpoint
+async def generate_suggested_questions_for_chatbot(request: SuggestedQuestionsRequest):
+    """
+    Generate suggested questions about the video content for a chatbot interface.
+    
+    - **task_id**: Task ID from video processing
+    
+    Returns a list of suggested questions that users might want to ask about the video.
+    """
+    # Verify that the task exists and is completed
+    if request.task_id not in task_storage:
+        raise HTTPException(status_code=404, detail=f"Task {request.task_id} not found")
+    
+    task_info = task_storage[request.task_id]
+    
+    if task_info["status"] != "completed":
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Task processing not complete. Current status: {task_info['status']}"
+        )
+    
+    try:
+        # Get transcript info
+        transcript_segments = task_info["transcript_info"]["segments"]
+        video_info = {
+            "title": task_info["video_info"]["title"],
+            "description": task_info["video_info"]["description"]
+        }
+        
+        # Generate suggested questions
+        suggested_questions = await generate_suggested_questions(transcript_segments, video_info)
+        
+        return SuggestedQuestionsResult(questions=suggested_questions)
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error generating suggested questions: {str(e)}")
+
+
 
 @router.post("/study-guide", response_model=StudyGuideResponse, tags=["Study Guide"])
 async def create_study_guide(request: StudyGuideRequest, background_tasks: BackgroundTasks):
