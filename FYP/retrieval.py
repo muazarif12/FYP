@@ -2,8 +2,9 @@ import asyncio
 import re
 import time
 import numpy as np
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import FAISS
+import uuid
+from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_community.vectorstores import Chroma
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import Document
 from rank_bm25 import BM25Okapi
@@ -18,24 +19,27 @@ def get_embedding_model():
     global _embedding_model
     if _embedding_model is None:
         # Use device="cuda" only if you have CUDA available, otherwise use "cpu"
+        import torch
+        device = "cuda" if torch.cuda.is_available() else "cpu"
         _embedding_model = HuggingFaceEmbeddings(
             model_name="all-MiniLM-L6-v2", 
-            model_kwargs={"device": "cuda"},
+            model_kwargs={"device": device},
             encode_kwargs={"batch_size": 32, "normalize_embeddings": True}  # Batch processing for speed
         )
     return _embedding_model
 
-# Precomputed FAISS index (to be initialized on first call)
-_faiss_index = None
+# Precomputed Chroma index (to be initialized on first call)
+_chroma_db = None
 _index_texts = None
 _index_metadata = None
+_collection_name = str(uuid.uuid4())  # Use a unique collection name for each session
 
-async def precompute_faiss_index(text):
-    """Precompute and cache the FAISS index for faster subsequent retrievals"""
-    global _faiss_index, _index_texts, _index_metadata
+async def precompute_chroma_index(text):
+    """Precompute and cache the Chroma index for faster subsequent retrievals"""
+    global _chroma_db, _index_texts, _index_metadata
     
-    if _faiss_index is not None:
-        return _faiss_index, _index_texts, _index_metadata
+    if _chroma_db is not None:
+        return _chroma_db, _index_texts, _index_metadata
     
     # Preprocess text
     text = text.replace('\r', '').replace('\xa0', ' ')
@@ -51,35 +55,38 @@ async def precompute_faiss_index(text):
     # Get embedding model
     embedding_model = get_embedding_model()
     
-    # Create FAISS index
-    _faiss_index = await asyncio.to_thread(
-        FAISS.from_texts, 
-        _index_texts, 
-        embedding_model, 
-        _index_metadata
+    # Create Chroma index
+    # Using in-memory Chroma DB with GPU acceleration
+    # persist_directory=None means in-memory
+    _chroma_db = await asyncio.to_thread(
+        Chroma.from_texts,
+        _index_texts,
+        embedding_model,
+        _index_metadata,
+        collection_name=_collection_name
     )
     
-    return _faiss_index, _index_texts, _index_metadata
+    return _chroma_db, _index_texts, _index_metadata
 
 async def retrieve_chunks(text, query, k=3):
-    """Enhanced retrieval using FAISS and optimized for performance"""
+    """Enhanced retrieval using Chroma and optimized for performance"""
     start_time = time.time()
     
-    # Get or create FAISS index
-    faiss_index, texts, metadata = await precompute_faiss_index(text)
+    # Get or create Chroma index
+    chroma_db, texts, metadata = await precompute_chroma_index(text)
     
     # Create BM25 index if not already cached with the index
-    if not hasattr(faiss_index, '_bm25_index'):
+    if not hasattr(chroma_db, '_bm25_index'):
         tokenized_texts = [t.split() for t in texts]
-        faiss_index._bm25_index = BM25Okapi(tokenized_texts)
+        chroma_db._bm25_index = BM25Okapi(tokenized_texts)
     
-    bm25 = faiss_index._bm25_index
+    bm25 = chroma_db._bm25_index
     
     # Run embedding and BM25 searches in parallel
     async def run_parallel_searches():
         # Define synchronous functions for thread pool
-        def faiss_search():
-            return faiss_index.similarity_search_with_score(query, k=k)
+        def chroma_search():
+            return chroma_db.similarity_search_with_score(query, k=k)
         
         def bm25_search():
             scores = bm25.get_scores(query.split())
@@ -89,11 +96,11 @@ async def retrieve_chunks(text, query, k=3):
         # Execute in thread pool
         with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
             # Submit tasks
-            faiss_future = executor.submit(faiss_search)
+            chroma_future = executor.submit(chroma_search)
             bm25_future = executor.submit(bm25_search)
             
             # Get results
-            results_embedding = faiss_future.result()
+            results_embedding = chroma_future.result()
             results_bm25_raw = bm25_future.result()
         
         # Convert BM25 results to documents
@@ -135,5 +142,5 @@ async def retrieve_chunks(text, query, k=3):
 async def initialize_indexes(text):
     """Initialize indexes in background to speed up first query"""
     print("Pre-computing embedding indexes...")
-    await precompute_faiss_index(text)
+    await precompute_chroma_index(text)
     print("Embedding indexes ready.")

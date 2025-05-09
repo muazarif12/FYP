@@ -418,7 +418,7 @@ async def analyze_transcript_for_highlights(transcript, video_info, video_durati
 
     try:
         logger.info("Sending transcript to Ollama LLM for highlight analysis...")
-        response = ollama.chat(model="deepseek-r1:7b", messages=[{"role": "system", "content": prompt}])
+        response = ollama.chat(model="deepseek-r1:latest", messages=[{"role": "system", "content": prompt}])
         logger.info("Response received from LLM model.")
         raw_content = response["message"]["content"]
 
@@ -928,7 +928,7 @@ async def generate_custom_highlights(video_path, transcript_segments, video_info
     
     try:
         logger.info("Sending custom highlight request to LLM...")
-        response = ollama.chat(model="deepseek-r1:7b", messages=[{"role": "system", "content": custom_prompt}])
+        response = ollama.chat(model="deepseek-r1:latest", messages=[{"role": "system", "content": custom_prompt}])
         logger.info("Response received from LLM model.")
         raw_content = response["message"]["content"]
         

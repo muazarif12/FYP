@@ -109,7 +109,7 @@
             
 #             # Call Ollama for translation
 #             logger.info(f"Translating chunk {i+1}/{len(chunks)} ({len(chunk)} segments)")
-#             response = ollama.chat(model="deepseek-r1:7b", messages=[{"role": "system", "content": prompt}])
+#             response = ollama.chat(model="deepseek-r1:latest", messages=[{"role": "system", "content": prompt}])
 #             result = response["message"]["content"]
             
 #             # Parse the translations
@@ -831,7 +831,7 @@ async def translate_transcript_with_ollama(transcript_segments, detected_languag
             
             # Call Ollama for translation
             logger.info(f"Translating chunk {i+1}/{len(chunks)} ({len(chunk)} segments)")
-            response = ollama.chat(model="deepseek-r1:7b", messages=[{"role": "system", "content": prompt}])
+            response = ollama.chat(model="deepseek-r1:latest", messages=[{"role": "system", "content": prompt}])
             result = response["message"]["content"]
             
             # Parse the translations
