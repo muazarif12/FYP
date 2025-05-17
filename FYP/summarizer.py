@@ -83,7 +83,7 @@ async def generate_response_with_gemini_async(prompt_text, language_code="en"):
         return "An error occurred while generating the response."
 
 # Function to generate response using Ollama's chat functionality with improved prompting and caching
-async def generate_response_async(prompt_text, language_code="en", model_name="deepseek-r1:latest"):
+async def generate_response_async(prompt_text, language_code="en", model_name="deepseek-r1:7b"):
     """
     Generate a response with high GPU utilization by using ollama.generate instead of ollama.chat.
     This mimics the behavior of 'ollama run' command which shows higher GPU usage.
@@ -91,7 +91,7 @@ async def generate_response_async(prompt_text, language_code="en", model_name="d
     Args:
         prompt_text (str): The prompt to send to the model
         language_code (str): Language code for response (default: "en")
-        model_name (str): The model to use (default: "deepseek-r1:latest")
+        model_name (str): The model to use (default: "deepseek-r1:7b")
         
     Returns:
         str: The generated response
@@ -170,7 +170,7 @@ async def generate_response_async(prompt_text, language_code="en", model_name="d
         return "An error occurred while generating the response."
 
 # Alternative method using direct subprocess call to ollama run (exactly like CLI)
-# def generate_with_subprocess(prompt_text, model_name="deepseek-r1:latest"):
+# def generate_with_subprocess(prompt_text, model_name="deepseek-r1:7b"):
 #     """
 #     Generate a response by directly calling the ollama run command.
 #     This method is guaranteed to use GPU at the same level as command line usage.
@@ -218,7 +218,7 @@ async def check_gpu_status():
             None,
             functools.partial(
                 ollama.embeddings,
-                model="deepseek-r1:latest",
+                model="deepseek-r1:7b",
                 prompt="test",
                 options={"num_gpu": 1}  # Try to use GPU
             )

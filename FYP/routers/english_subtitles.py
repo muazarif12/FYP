@@ -181,14 +181,21 @@ async def process_subtitle_generation(subtitle_task_id: str, video_task_id: str,
             "traceback": traceback.format_exc()
         }
 
-# Background task for adjusting subtitle timing
 async def process_subtitle_adjustment(new_subtitle_task_id: str, source_subtitle_task_id: str, offset_seconds: float):
     try:
         subtitle_task_storage[new_subtitle_task_id] = {"status": "processing", "message": "Adjusting subtitle timing..."}
         source = subtitle_task_storage[source_subtitle_task_id]["result"]
         source_subtitle_path = source["subtitle_path"]
-        subtitle_format     = source["subtitle_format"]
-        original_video      = source.get("original_video_path")
+        subtitle_format = source["subtitle_format"]
+        
+        # Important fix: Always use the original video path for embedding new subtitles
+        # This ensures we're not trying to use an already-subtitled video
+        original_video = source.get("original_video_path", source.get("video_path"))
+        
+        if not original_video:
+            logger.error("Cannot find original video for subtitle adjustment")
+            subtitle_task_storage[new_subtitle_task_id] = {"status": "failed", "error": "Original video not found"}
+            return
 
         subtitles_dir = os.path.join(settings.OUTPUT_DIR, "subtitles")
         os.makedirs(subtitles_dir, exist_ok=True)
@@ -203,19 +210,29 @@ async def process_subtitle_adjustment(new_subtitle_task_id: str, source_subtitle
             return
 
         new_subtitle_filename = f"{new_subtitle_task_id}_adjusted.{subtitle_format}"
-        new_subtitle_path     = os.path.join(subtitles_dir, new_subtitle_filename)
+        new_subtitle_path = os.path.join(subtitles_dir, new_subtitle_filename)
         shutil.copy(adjusted_subtitle_path, new_subtitle_path)
 
-        # *** Burn the adjusted subtitles into a new video ***
+        # Import the correct embed_subtitles_in_video function 
+        # to avoid undefined function errors
+        from subtitling import embed_subtitles_in_video
+        
+        # Burn the adjusted subtitles into a new video
         new_video_path = None
-        if original_video:
+        if original_video and os.path.exists(original_video):
             new_video_path = embed_subtitles_in_video(original_video, new_subtitle_path, subtitles_dir)
+            if not new_video_path:
+                logger.error("Failed to embed subtitles in video during adjustment")
+        else:
+            logger.warning(f"Original video not found: {original_video}")
 
+        # Store both original video path and the new processed video
         subtitle_task_storage[new_subtitle_task_id] = {
             "status": "completed",
             "result": {
                 "subtitle_path": new_subtitle_path,
                 "video_path": new_video_path,
+                "original_video_path": original_video,  # Keep track of original video
                 "subtitle_format": subtitle_format,
                 "original_subtitle_task_id": source_subtitle_task_id,
                 "offset_applied": offset_seconds,

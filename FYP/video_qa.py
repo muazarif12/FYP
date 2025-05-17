@@ -443,7 +443,7 @@ async def answer_video_question(transcript_segments, video_path, question, full_
     """
     
     logger.info("Sending question to LLM for analysis...")
-    response = ollama.chat(model="deepseek-r1:latest", messages=[{"role": "system", "content": prompt}])
+    response = ollama.chat(model="deepseek-r1:7b", messages=[{"role": "system", "content": prompt}])
     raw_content = response["message"]["content"]
     
     # Extract JSON from response

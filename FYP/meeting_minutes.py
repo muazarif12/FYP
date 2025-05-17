@@ -90,7 +90,7 @@ async def generate_meeting_minutes(transcript_text, meeting_title="Meeting"):
         
         # Call the LLM with our prompt
         response = ollama.chat(
-            model="deepseek-r1:latest",  # You can use any model you prefer
+            model="deepseek-r1:7b",  # You can use any model you prefer
             messages=[
                 {"role": "system", "content": "You are a meeting summarization assistant. You create detailed, comprehensive meeting minutes in JSON format."},
                 {"role": "user", "content": prompt}

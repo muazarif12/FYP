@@ -144,7 +144,7 @@ _cache_size_limit = 20  # Limit cache size to prevent memory issues
 #             None,
 #             functools.partial(
 #                 ollama.chat,
-#                 model="deepseek-r1:latest",
+#                 model="deepseek-r1:7b",
 #                 messages=[{"role": "system", "content": prompt}]
 #             )
 #         )
