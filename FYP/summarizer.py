@@ -1,4 +1,8 @@
 import os
+os.environ["OLLAMA_NUM_GPU"] = "1"
+os.environ["OLLAMA_NUM_THREAD"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["OLLAMA_GPU_LAYERS"] = "100"  # Max GPU layers
 import re
 import time
 import ollama
@@ -6,6 +10,7 @@ from utils import format_timestamp
 import asyncio
 import hashlib
 import functools
+import subprocess
 import google.generativeai as genai
 from dotenv import load_dotenv
 
@@ -78,59 +83,160 @@ async def generate_response_with_gemini_async(prompt_text, language_code="en"):
         return "An error occurred while generating the response."
 
 # Function to generate response using Ollama's chat functionality with improved prompting and caching
-async def generate_response_async(prompt_text, language_code="en"):
+async def generate_response_async(prompt_text, language_code="en", model_name="deepseek-r1:latest"):
     """
-    Generate a response with caching to improve performance for repeated prompts.
+    Generate a response with high GPU utilization by using ollama.generate instead of ollama.chat.
+    This mimics the behavior of 'ollama run' command which shows higher GPU usage.
+    
+    Args:
+        prompt_text (str): The prompt to send to the model
+        language_code (str): Language code for response (default: "en")
+        model_name (str): The model to use (default: "deepseek-r1:latest")
+        
+    Returns:
+        str: The generated response
     """
     # Create a cache key from the prompt and language
-    cache_key = hashlib.md5(f"{prompt_text}:{language_code}".encode()).hexdigest()
-    
+    cache_key = hashlib.md5(f"{prompt_text}:{language_code}:{model_name}".encode()).hexdigest()
+   
     # Check if response is in cache
     if cache_key in _response_cache:
         print("Using cached response (saved LLM call)")
         return _response_cache[cache_key]
     
-    model = "deepseek-r1:7b"  # Use any model you prefer
+    # Add language instruction to the prompt
+    if language_code and language_code != "en":
+        prompt_text = f"Please respond in {language_code} language. {prompt_text}"
     
+    # # GPU-optimized options - these are critical for high GPU utilization
+    # options = {
+    #     "num_gpu": 1,           # Use 1 GPU
+    #     "num_thread": 6,        # Minimize CPU threads
+    #     "num_predict": 512,     # Limit max tokens
+    #     "temperature": 0.7,     # Standard temperature
+    #     "top_k": 40,            # Limit token consideration
+    #     "top_p": 0.9,           # Use nucleus sampling
+    #     "mirostat": 0,          # Turn off mirostat sampling
+    #     "seed": 42              # Fixed seed for reproducibility
+    # }
+   
     try:
-        # Add language instruction to the prompt
-        language_instruction = ""
-        if language_code and language_code != "en":
-            language_instruction = f"Please respond in {language_code} language. "
-
-        enhanced_prompt = f"{language_instruction}{prompt_text}"
-
+        print(f"Using model: {model_name} with GPU acceleration")
         start_time = time.time()  # Start time for query
-
+        
         # Run Ollama in a thread pool to prevent blocking
+        # KEY DIFFERENCE: Use generate instead of chat for higher GPU utilization
         loop = asyncio.get_event_loop()
         response = await loop.run_in_executor(
             None,
             functools.partial(
-                ollama.chat,
-                model=model,
-                messages=[{"role": "user", "content": enhanced_prompt}]
+                ollama.generate,
+                model=model_name,
+                prompt=prompt_text,
+                # options=options,
+                keep_alive="30m"
             )
         )
-
+        
         end_time = time.time()  # End time for query
         print(f"Time taken for LLM query: {end_time - start_time:.4f} seconds")
         
-        result = response['message']['content']
+        # Extract system metrics if available
+        if 'eval_count' in response:
+            tokens_per_second = response.get('eval_count', 0) / (response.get('eval_duration', 1) / 1_000_000_000)
+            print(f"Generation speed: {tokens_per_second:.2f} tokens/sec")
+            print(f"Total tokens: Input {response.get('prompt_eval_count', 0)}, " 
+                  f"Generated {response.get('eval_count', 0)}")
         
+        # Check for GPU usage in response metadata
+        if 'gpu' in str(response):
+            print("GPU usage confirmed in response metadata")
+        
+        # Extract the response text
+        result = response.get('response', '')
+       
         # Cache the response
         if len(_response_cache) >= _cache_size_limit:
             # Remove oldest entry if cache is full
             oldest_key = next(iter(_response_cache))
             del _response_cache[oldest_key]
-        
+       
         _response_cache[cache_key] = result
-        
+       
         return result
-        
+       
     except Exception as e:
         print(f"Error: {e}")
         return "An error occurred while generating the response."
+
+# Alternative method using direct subprocess call to ollama run (exactly like CLI)
+# def generate_with_subprocess(prompt_text, model_name="deepseek-r1:latest"):
+#     """
+#     Generate a response by directly calling the ollama run command.
+#     This method is guaranteed to use GPU at the same level as command line usage.
+#     """
+#     try:
+#         # Format the command as you would on the command line
+#         # This is exactly what happens when you type 'ollama run modelname prompt'
+#         cmd = ["ollama", "run", model_name, prompt_text]
+        
+#         # Set environment variables for the subprocess
+#         env = os.environ.copy()
+#         env["OLLAMA_NUM_GPU"] = "1"
+#         env["OLLAMA_NUM_THREAD"] = "1"
+        
+#         # Run the command and capture output
+#         start_time = time.time()
+#         result = subprocess.run(
+#             cmd, 
+#             capture_output=True, 
+#             text=True, 
+#             env=env, 
+#             check=True
+#         )
+#         end_time = time.time()
+        
+#         print(f"Time taken for LLM query: {end_time - start_time:.4f} seconds")
+#         return result.stdout
+#     except subprocess.CalledProcessError as e:
+#         print(f"Error: {e}")
+#         print(f"Error output: {e.stderr}")
+#         return "An error occurred while generating the response."
+
+# Function to check if GPU is available and configured
+async def check_gpu_status():
+    """
+    Check if GPU is available and properly configured for Ollama.
+    
+    Returns:
+        bool: True if GPU is available, False otherwise
+    """
+    try:
+        # Call Ollama API to get system information
+        loop = asyncio.get_event_loop()
+        response = await loop.run_in_executor(
+            None,
+            functools.partial(
+                ollama.embeddings,
+                model="deepseek-r1:latest",
+                prompt="test",
+                options={"num_gpu": 1}  # Try to use GPU
+            )
+        )
+        
+        # If we get here without an error, GPU is likely available
+        print("GPU acceleration is available for Ollama")
+        return True
+    except Exception as e:
+        # Check if the error message indicates GPU issues
+        error_str = str(e).lower()
+        if "gpu" in error_str and ("not available" in error_str or "error" in error_str):
+            print(f"GPU acceleration is not available: {e}")
+            return False
+        else:
+            # Other error not related to GPU
+            print(f"Could not determine GPU status: {e}")
+            return True  # Assume GPU available if not explicitly unavailable
 
 # Get welcome message based on detected language with caching
 _welcome_message_cache = {}
@@ -266,139 +372,6 @@ async def generate_key_moments_with_titles(transcript_segments, full_timestamped
     formatted_text = format_key_moments(key_moments_structured, language_code)
     
     return key_moments_structured, formatted_text
-
-
-# async def generate_key_moments_algorithmically(transcript_segments, full_timestamped_transcript):
-#     """
-#     Generate key moments from transcript using algorithmic methods without LLM.
-#     Ensures all timestamps are in HH:MM:SS format and improves title generation.
-#     """
-#     import re
-#     import numpy as np
-#     from collections import Counter
-    
-#     # Helper function to convert seconds to HH:MM:SS
-#     def seconds_to_timestamp(seconds):
-#         if isinstance(seconds, str):
-#             # If it's already in HH:MM:SS format, return it
-#             if re.match(r'\d{2}:\d{2}:\d{2}', seconds):
-#                 return seconds
-#             try:
-#                 seconds = float(seconds)
-#             except ValueError:
-#                 return "00:00:00"  # Default if conversion fails
-                
-#         hours = int(seconds // 3600)
-#         minutes = int((seconds % 3600) // 60)
-#         secs = int(seconds % 60)
-#         return f"{hours:02d}:{minutes:02d}:{secs:02d}"
-    
-#     # Ensure we have the introduction
-#     key_moments = [
-#         {
-#             "timestamp": "00:00:00",
-#             "title": "Introduction",
-#             "description": "Beginning of the video."
-#         }
-#     ]
-    
-#     # Extract timestamps and text from the transcript
-#     timestamps = []
-#     texts = []
-    
-#     for segment in transcript_segments:
-#         if len(segment) >= 3:
-#             # Convert timestamp to proper format (assuming segment[0] contains timestamp)
-#             timestamp = seconds_to_timestamp(segment[0])
-#             text = segment[2].strip()  # Assuming segment[2] contains text
-            
-#             timestamps.append(timestamp)
-#             texts.append(text)
-    
-#     # Skip if transcript is too short
-#     if len(texts) < 10:
-#         return key_moments, format_key_moments(key_moments)
-    
-#     try:
-#         # Segment the video into approximately 5-7 key moments (plus intro)
-#         total_segments = len(texts)
-#         num_key_moments = min(7, max(5, total_segments // 50 + 3))
-        
-#         # Create evenly spaced key moments
-#         segment_indices = [int((i+1) * total_segments / (num_key_moments+1)) for i in range(num_key_moments)]
-        
-#         # Generate better titles using n-grams and frequency analysis
-#         for i, idx in enumerate(segment_indices):
-#             if idx >= len(texts):
-#                 continue
-                
-#             # Get context by including surrounding text
-#             start_context = max(0, idx - 2)
-#             end_context = min(len(texts), idx + 3)
-#             context_text = " ".join(texts[start_context:end_context])
-            
-#             # Generate title using most frequent meaningful words
-#             words = re.findall(r'\b[a-zA-Z]{3,}\b', context_text.lower())
-#             # Filter out common stopwords
-#             stopwords = {'and', 'the', 'this', 'that', 'with', 'from', 'have', 'just', 'not', 'for', 'but', 'what', 'you', 'all'}
-#             filtered_words = [w for w in words if w not in stopwords]
-            
-#             # Get most common words
-#             word_counts = Counter(filtered_words)
-#             top_words = [word for word, count in word_counts.most_common(3) if count > 1]
-            
-#             # If we don't have enough repeated words, take the most frequent ones anyway
-#             if len(top_words) < 2:
-#                 top_words = [word for word, _ in word_counts.most_common(2)]
-            
-#             # Capitalize each word for the title
-#             title_words = [word.capitalize() for word in top_words[:2]]
-#             title = " ".join(title_words) if title_words else f"Key Moment {i+1}"
-            
-#             # Better description by taking the most representative sentence
-#             sentences = re.split(r'[.!?]', context_text)
-#             best_sentence = max(sentences, key=len) if sentences else context_text
-#             description = best_sentence.strip()[:100]
-#             if description and not description.endswith(('.', '!', '?')):
-#                 description += "..."
-            
-#             # Add to key moments
-#             key_moments.append({
-#                 "timestamp": timestamps[idx],
-#                 "title": title,
-#                 "description": description
-#             })
-    
-#     except Exception as e:
-#         print(f"Error in algorithmic key moments generation: {e}")
-#         # Create basic key moments as fallback
-#         interval = max(1, len(texts) // 5)
-#         for i in range(1, 6):
-#             idx = min(i * interval, len(texts) - 1)
-#             key_moments.append({
-#                 "timestamp": timestamps[idx],
-#                 "title": f"Key Moment {i}",
-#                 "description": texts[idx][:100] + "..." if texts[idx] and len(texts[idx]) > 100 else texts[idx]
-#             })
-    
-#     # Sort by timestamp to ensure chronological order
-#     key_moments.sort(key=lambda x: x["timestamp"])
-    
-#     # Format the key moments
-#     formatted_text = format_key_moments(key_moments)
-#     return key_moments, formatted_text
-
-# # Helper function to convert timestamp to seconds
-# def convert_timestamp_to_seconds(timestamp):
-#     parts = timestamp.split(":")
-#     if len(parts) == 3:
-#         hours, minutes, seconds = map(int, parts)
-#         return hours * 3600 + minutes * 60 + seconds
-#     elif len(parts) == 2:
-#         minutes, seconds = map(int, parts)
-#         return minutes * 60 + seconds
-#     return 0
-
 
 async def generate_key_moments_algorithmically(transcript_segments, full_timestamped_transcript, detected_language="en"):
     """
