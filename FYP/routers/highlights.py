@@ -7,6 +7,8 @@ import asyncio
 import uuid
 import shutil
 
+from requests import request
+
 from core.config import settings
 
 # Import from utils router to access task storage
@@ -16,7 +18,7 @@ from routers.utils import task_storage
 import sys
 sys.path.append('.')  # Ensure current directory is in path
 from highlights import generate_highlights, generate_custom_highlights
-from algorithmic_highlights import generate_highlights_algorithmically
+from algorithmic_highlights import generate_highlights_algorthmically
 
 router = APIRouter()
 
@@ -259,12 +261,13 @@ async def process_highlights_generation(
         elif use_algorithmic:
             # Fast algorithmic method
             highlights_task_storage[highlights_task_id]["message"] = "Using fast algorithmic highlight generation..."
-            video_output_path, highlight_segments = await generate_highlights_algorithmically(
+            video_output_path, highlight_segments = await generate_highlights_algorthmically(
                 video_path,
                 transcript_segments,
                 video_info,
                 target_duration=duration_seconds,
-                is_reel=is_reel
+                is_reel=is_reel,
+                use_advanced_sentence_formation=True,
             )
             
         else:

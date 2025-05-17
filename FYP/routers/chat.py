@@ -1,88 +1,3 @@
-# from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
-# from fastapi.responses import JSONResponse
-# from pydantic import BaseModel
-# from typing import Optional, List
-# import os
-# import asyncio
-# import uuid
-
-# # Import from utils router to access task storage
-# from routers.utils import task_storage
-
-# # Import existing functions
-# import sys
-# sys.path.append('.')  # Ensure current directory is in path
-# from summarizer import generate_enhanced_response
-# from retrieval import retrieve_chunks, initialize_indexes
-
-# router = APIRouter()
-
-# # Data models
-# class ChatRequest(BaseModel):
-#     task_id: str
-#     message: str
-
-# class ChatResponse(BaseModel):
-#     response: str
-
-# @router.post("/chat", response_model=ChatResponse, tags=["Chat"])
-# async def chat_with_video(request: ChatRequest):
-#     """
-#     Simple chat with the video content. Ask questions and receive text responses.
-    
-#     - **task_id**: Task ID from video processing
-#     - **message**: User's question or message
-    
-#     Returns a response based on the video content.
-#     """
-#     # Verify that the task exists and is completed
-#     if request.task_id not in task_storage:
-#         raise HTTPException(status_code=404, detail=f"Task {request.task_id} not found")
-    
-#     task_info = task_storage[request.task_id]
-    
-#     if task_info["status"] != "completed":
-#         raise HTTPException(
-#             status_code=400, 
-#             detail=f"Task processing not complete. Current status: {task_info['status']}"
-#         )
-    
-#     try:
-#         # Extract transcript info
-#         transcript_segments = task_info["transcript_info"]["segments"]
-#         full_text = task_info["transcript_info"]["full_text"]
-#         detected_language = task_info["transcript_info"]["language"]
-        
-#         # Initialize retrieval indexes
-#         await initialize_indexes(full_text)
-        
-#         # Determine query type
-#         query_type = "general"
-#         if any(term in request.message.lower() for term in ["timeline", "key moments", "chapters", "sections", "timestamps"]):
-#             query_type = "key_moments"
-#         elif any(term in request.message.lower() for term in ["summarize", "summary", "overview", "what is the video about"]):
-#             query_type = "summary"
-#         elif any(term in request.message.lower() for term in ["key topics", "main points", "main ideas", "central themes"]):
-#             query_type = "key_topics"
-        
-#         # Retrieve relevant chunks
-#         retrieved_docs = await retrieve_chunks(full_text, request.message, k=3)
-#         references = "\n\n".join([doc.page_content for doc in retrieved_docs])
-        
-#         # Generate response
-#         response_text = await generate_enhanced_response(
-#             query_type, 
-#             references, 
-#             request.message, 
-#             detected_language
-#         )
-        
-#         return ChatResponse(response=response_text)
-    
-#     except Exception as e:
-#         raise HTTPException(status_code=500, detail=f"Error generating response: {str(e)}")
-
-
 from fastapi import APIRouter, HTTPException, BackgroundTasks, Query
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
@@ -101,7 +16,6 @@ sys.path.append('.')  # Ensure current directory is in path
 from summarizer import generate_enhanced_response, generate_key_moments_algorithmically
 from retrieval import retrieve_chunks, initialize_indexes
 from highlights import extract_highlights, generate_highlights, generate_custom_highlights, merge_clips
-from algorithmic_highlights import generate_highlights_algorithmically
 from meeting_minutes import generate_meeting_minutes, save_meeting_minutes
 from podcast_integration import generate_podcast
 from dubbing import create_english_dub
