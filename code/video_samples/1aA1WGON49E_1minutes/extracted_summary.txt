@@ -1,0 +1,5 @@
+id: 1
+sentence:  Wow.  What  an  audience.  But  if  I'm  being  honest,  I  don't  care  what  you  think  of  my  talk.  I  don't.  I  care  what  the  internet  thinks  of  my  talk.  Because  they're  the  ones  who  get  it  seen  and  get  it  shared.  And  I  think  that's  where  most  people  get  it  wrong.  They're  talking  to  you  here,  instead  of  talking  to  you,  random  person  scrolling  Facebook.
+start: 11.540000000000001end: 32.98topic: 0score: 0.5112868007258258-----------------------------------------------------------id: 2
+sentence:  I'm  trying  to  think  of  the  last  time  I  watched  an  18 -minute  TED  Talk.  It's  been  years,  literally  years.  So  if  you're  giving  a  TED  Talk,  keep  it  quick.  I'm  doing  mine  in  under  a  minute.  I'm  at  44  seconds  right  now.  That  means  we've  got  time  for  one  final  joke.  Why  are  balloons  so  expensive?  Why?  Inflation. łuỡ  seat  dm  το  smiiiii
+start: 46.0end: 71.64topic: 0score: 1.0897226509233682-----------------------------------------------------------

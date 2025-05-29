@@ -1,15 +1,15 @@
-from utils import segment_by_pauses,filter_by_word_count,process_transcript_words, save_extractive_summary,read_word_data
+from utils import saving_full_transcript,download_video,merge_word_lists,segment_by_pauses,filter_by_word_count,process_transcript_words, save_extractive_summary,read_word_data
 from text_processing import merge_extractive_summaries,chunk_subtitle_segments
 from video_processing import process_video
 from sklearn.feature_extraction.text import TfidfVectorizer
-
+import whisper,torch
 
 import time
 
-def generate_highlights(video, language='english'):
+def generate_highlights(link):
     total_start = time.time()  # Track total time
 
-    video_name = video
+    video_name = download_video(link)
     formatted_transcript_path = f'video_samples/{video_name}/formatted_transcript.txt'
     full_transcript_path = f'video_samples/{video_name}/full_transcript.txt'
     formatted_sentences_counts_path = f'video_samples/{video_name}/sentences_counts.txt'
@@ -18,8 +18,12 @@ def generate_highlights(video, language='english'):
     output_path = f"video_samples/{video_name}/highlights.mp4"
     model_name = 'sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2'
     threshold_similarity = 0.2
-
-    words_data = read_word_data(formatted_transcript_path)
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    model = whisper.load_model("large-v3-turbo").to(device)
+    result = model.transcribe(video_path,word_timestamps=True)
+    language=result['language']
+    words_data=merge_word_lists(result['segments'])
+    # words_data = read_word_data(formatted_transcript_path)
 
     if language == 'english':
         sentences_timestamps = process_transcript_words(words_data, output_file=formatted_sentences_counts_path)
@@ -35,7 +39,7 @@ def generate_highlights(video, language='english'):
 
 
     save_extractive_summary(extracted_summary_path, summary=summary, merged=True)
-
+    saving_full_transcript(full_transcript_path,result['text'])
     process_video(summary, video_path, output_path)
 
     total_end = time.time()
@@ -45,7 +49,7 @@ def generate_highlights(video, language='english'):
 
 if __name__ == "__main__":
     
-    generate_highlights('Ti5vfu9arXQ_25minutes',language='english')    
+    generate_highlights("https://youtu.be/1aA1WGON49E?feature=shared")    
     #uiC3mhmh8AQ_30minutes
     #Ti5vfu9arXQ_25minutes
     #6vX3Us1TOw8_14minutes

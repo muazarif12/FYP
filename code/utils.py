@@ -6,7 +6,46 @@ import networkx as nx
 
     
 
+import asyncio, time
+from pytubefix import YouTube
 
+import os
+from datetime import datetime
+
+def download_video(link):
+    """Downloads the highest resolution video (with audio) and saves it in a folder named with video ID and duration."""
+    try:
+        youtubeObject = YouTube(link)
+        video_stream = youtubeObject.streams.get_highest_resolution()
+
+        # Get video ID and duration
+        video_id = youtubeObject.video_id
+        duration_seconds = youtubeObject.length
+        duration_minutes = round(duration_seconds / 60)  # Convert to minutes, rounded to 1 decimal
+        
+        # Create folder name: id_duration(minutes)
+        folder_name = f"{video_id}_{duration_minutes}minutes"
+        
+        # Create the full path: video_samples/folder_name
+        folder_path = os.path.join("video_samples", folder_name)
+        os.makedirs(folder_path, exist_ok=True)
+        
+        # Get the file extension and create filename
+        ext = video_stream.mime_type.split("/")[-1]
+        filename = f"downloaded_video.{ext}"
+        file_path = os.path.join(folder_path, filename)
+        
+        # Download the video
+        video_stream.download(output_path=folder_path,filename=filename)
+        
+        print(f"Video downloaded successfully in folder: '{folder_name}'")
+        print(f"File saved as: '{filename}'")
+        
+        return folder_name  # Return folder name for other functions to use
+        
+    except Exception as e:
+        print(f"An error occurred while downloading the video: {e}")
+        return None
 def merge_word_lists(segments):
     """Merges a list of lists of word dictionaries into a single list of word dictionaries."""
     merged_list = []
@@ -275,3 +314,11 @@ def segment_by_pauses(word_timestamps, min_pause_duration=0.7):
         })
     
     return sentences
+
+
+def merge_word_lists(segments):
+    """Merges a list of lists of word dictionaries into a single list of word dictionaries."""
+    merged_list = []
+    for sublist in segments:
+        merged_list.extend(sublist['words'])
+    return merged_list

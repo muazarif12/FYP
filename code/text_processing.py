@@ -144,9 +144,7 @@ def generate_extractive_summary(
     """
     # 1. Extract sentences and durations
     sentences = [item['sentence'] for item in sentence_list]
-    print('printing chunks from claude suggested')
-    for i in sentences:
-        print(i)
+
     durations = [item['end'] - item['start'] for item in sentence_list]
     
     # 2. Filter by duration
@@ -331,9 +329,7 @@ def generate_extractive_summary_sentiments(
     """
     # 1. Extract sentences and durations
     sentences = [item['sentence'] for item in sentence_list]
-    print('printing chunks from claude suggested')
-    for i in sentences:
-        print(i)
+ 
     durations = [item['end'] - item['start'] for item in sentence_list]
     
     # 2. Filter by duration
