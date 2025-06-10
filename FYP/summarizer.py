@@ -82,16 +82,102 @@ async def generate_response_with_gemini_async(prompt_text, language_code="en"):
         print(f"Error: {e}")
         return "An error occurred while generating the response."
 
-# Function to generate response using Ollama's chat functionality with improved prompting and caching
-async def generate_response_async(prompt_text, language_code="en", model_name="deepseek-r1:7b"):
+# # Function to generate response using Ollama's chat functionality with improved prompting and caching
+# async def generate_response_async(prompt_text, language_code="en", model_name="deepseek-r1:7b"):
+#     """
+#     Generate a response with high GPU utilization by using ollama.generate instead of ollama.chat.
+#     This mimics the behavior of 'ollama run' command which shows higher GPU usage.
+    
+#     Args:
+#         prompt_text (str): The prompt to send to the model
+#         language_code (str): Language code for response (default: "en")
+#         model_name (str): The model to use (default: "deepseek-r1:7b")
+        
+#     Returns:
+#         str: The generated response
+#     """
+#     # Create a cache key from the prompt and language
+#     cache_key = hashlib.md5(f"{prompt_text}:{language_code}:{model_name}".encode()).hexdigest()
+   
+#     # Check if response is in cache
+#     if cache_key in _response_cache:
+#         print("Using cached response (saved LLM call)")
+#         return _response_cache[cache_key]
+    
+#     # Add language instruction to the prompt
+#     if language_code and language_code != "en":
+#         prompt_text = f"Please respond in {language_code} language. {prompt_text}"
+    
+#     # # GPU-optimized options - these are critical for high GPU utilization
+#     # options = {
+#     #     "num_gpu": 1,           # Use 1 GPU
+#     #     "num_thread": 6,        # Minimize CPU threads
+#     #     "num_predict": 512,     # Limit max tokens
+#     #     "temperature": 0.7,     # Standard temperature
+#     #     "top_k": 40,            # Limit token consideration
+#     #     "top_p": 0.9,           # Use nucleus sampling
+#     #     "mirostat": 0,          # Turn off mirostat sampling
+#     #     "seed": 42              # Fixed seed for reproducibility
+#     # }
+   
+#     try:
+#         print(f"Using model: {model_name} with GPU acceleration")
+#         start_time = time.time()  # Start time for query
+        
+#         # Run Ollama in a thread pool to prevent blocking
+#         # KEY DIFFERENCE: Use generate instead of chat for higher GPU utilization
+#         loop = asyncio.get_event_loop()
+#         response = await loop.run_in_executor(
+#             None,
+#             functools.partial(
+#                 ollama.generate,
+#                 model=model_name,
+#                 prompt=prompt_text,
+#                 # options=options,
+#                 keep_alive="30m"
+#             )
+#         )
+        
+#         end_time = time.time()  # End time for query
+#         print(f"Time taken for LLM query: {end_time - start_time:.4f} seconds")
+        
+#         # Extract system metrics if available
+#         if 'eval_count' in response:
+#             tokens_per_second = response.get('eval_count', 0) / (response.get('eval_duration', 1) / 1_000_000_000)
+#             print(f"Generation speed: {tokens_per_second:.2f} tokens/sec")
+#             print(f"Total tokens: Input {response.get('prompt_eval_count', 0)}, " 
+#                   f"Generated {response.get('eval_count', 0)}")
+        
+#         # Check for GPU usage in response metadata
+#         if 'gpu' in str(response):
+#             print("GPU usage confirmed in response metadata")
+        
+#         # Extract the response text
+#         result = response.get('response', '')
+       
+#         # Cache the response
+#         if len(_response_cache) >= _cache_size_limit:
+#             # Remove oldest entry if cache is full
+#             oldest_key = next(iter(_response_cache))
+#             del _response_cache[oldest_key]
+       
+#         _response_cache[cache_key] = result
+       
+#         return result
+       
+#     except Exception as e:
+#         print(f"Error: {e}")
+#         return "An error occurred while generating the response."
+
+# Function to generate response using Google's Gemini API with improved prompting and caching
+async def generate_response_async(prompt_text, language_code="en", model_name="models/gemini-2.0-flash"):
     """
-    Generate a response with high GPU utilization by using ollama.generate instead of ollama.chat.
-    This mimics the behavior of 'ollama run' command which shows higher GPU usage.
+    Generate a response using Google's Gemini API with caching to improve performance for repeated prompts.
     
     Args:
         prompt_text (str): The prompt to send to the model
         language_code (str): Language code for response (default: "en")
-        model_name (str): The model to use (default: "deepseek-r1:7b")
+        model_name (str): The Gemini model to use (default: "models/gemini-2.0-flash")
         
     Returns:
         str: The generated response
@@ -101,59 +187,37 @@ async def generate_response_async(prompt_text, language_code="en", model_name="d
    
     # Check if response is in cache
     if cache_key in _response_cache:
-        print("Using cached response (saved LLM call)")
+        print("Using cached response (saved API call)")
         return _response_cache[cache_key]
     
-    # Add language instruction to the prompt
-    if language_code and language_code != "en":
-        prompt_text = f"Please respond in {language_code} language. {prompt_text}"
-    
-    # # GPU-optimized options - these are critical for high GPU utilization
-    # options = {
-    #     "num_gpu": 1,           # Use 1 GPU
-    #     "num_thread": 6,        # Minimize CPU threads
-    #     "num_predict": 512,     # Limit max tokens
-    #     "temperature": 0.7,     # Standard temperature
-    #     "top_k": 40,            # Limit token consideration
-    #     "top_p": 0.9,           # Use nucleus sampling
-    #     "mirostat": 0,          # Turn off mirostat sampling
-    #     "seed": 42              # Fixed seed for reproducibility
-    # }
-   
     try:
-        print(f"Using model: {model_name} with GPU acceleration")
+        # Add language instruction to the prompt
+        language_instruction = ""
+        if language_code and language_code != "en":
+            language_instruction = f"Please respond in {language_code} language. "
+        enhanced_prompt = f"{language_instruction}{prompt_text}"
+        
+        print(f"Using model: {model_name}")
         start_time = time.time()  # Start time for query
         
-        # Run Ollama in a thread pool to prevent blocking
-        # KEY DIFFERENCE: Use generate instead of chat for higher GPU utilization
+        # Initialize the Gemini model
+        model = genai.GenerativeModel(model_name=model_name)
+        
+        # Run Gemini API call in a thread pool to prevent blocking
         loop = asyncio.get_event_loop()
         response = await loop.run_in_executor(
             None,
             functools.partial(
-                ollama.generate,
-                model=model_name,
-                prompt=prompt_text,
-                # options=options,
-                keep_alive="30m"
+                model.generate_content,
+                enhanced_prompt
             )
         )
         
         end_time = time.time()  # End time for query
-        print(f"Time taken for LLM query: {end_time - start_time:.4f} seconds")
-        
-        # Extract system metrics if available
-        if 'eval_count' in response:
-            tokens_per_second = response.get('eval_count', 0) / (response.get('eval_duration', 1) / 1_000_000_000)
-            print(f"Generation speed: {tokens_per_second:.2f} tokens/sec")
-            print(f"Total tokens: Input {response.get('prompt_eval_count', 0)}, " 
-                  f"Generated {response.get('eval_count', 0)}")
-        
-        # Check for GPU usage in response metadata
-        if 'gpu' in str(response):
-            print("GPU usage confirmed in response metadata")
+        print(f"Time taken for API query: {end_time - start_time:.4f} seconds")
         
         # Extract the response text
-        result = response.get('response', '')
+        result = response.text
        
         # Cache the response
         if len(_response_cache) >= _cache_size_limit:
@@ -169,39 +233,6 @@ async def generate_response_async(prompt_text, language_code="en", model_name="d
         print(f"Error: {e}")
         return "An error occurred while generating the response."
 
-# Alternative method using direct subprocess call to ollama run (exactly like CLI)
-# def generate_with_subprocess(prompt_text, model_name="deepseek-r1:7b"):
-#     """
-#     Generate a response by directly calling the ollama run command.
-#     This method is guaranteed to use GPU at the same level as command line usage.
-#     """
-#     try:
-#         # Format the command as you would on the command line
-#         # This is exactly what happens when you type 'ollama run modelname prompt'
-#         cmd = ["ollama", "run", model_name, prompt_text]
-        
-#         # Set environment variables for the subprocess
-#         env = os.environ.copy()
-#         env["OLLAMA_NUM_GPU"] = "1"
-#         env["OLLAMA_NUM_THREAD"] = "1"
-        
-#         # Run the command and capture output
-#         start_time = time.time()
-#         result = subprocess.run(
-#             cmd, 
-#             capture_output=True, 
-#             text=True, 
-#             env=env, 
-#             check=True
-#         )
-#         end_time = time.time()
-        
-#         print(f"Time taken for LLM query: {end_time - start_time:.4f} seconds")
-#         return result.stdout
-#     except subprocess.CalledProcessError as e:
-#         print(f"Error: {e}")
-#         print(f"Error output: {e.stderr}")
-#         return "An error occurred while generating the response."
 
 # Function to check if GPU is available and configured
 async def check_gpu_status():

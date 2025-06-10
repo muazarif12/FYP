@@ -175,7 +175,7 @@ def preprocess_transcript_segments(transcript_segments):
         for i, (start, end, text) in enumerate(transcript_segments)
     ]
 
-async def generate_highlights_algorthmically(
+async def generate_highlights_algorithmically(
     video_path,
     transcript_segments,
     video_info,
