@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "./FYP/Final_Optimized_Highlights"
+    ]
+}

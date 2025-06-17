@@ -547,7 +547,7 @@ async def create_english_subtitles(video_path, transcript_segments, detected_lan
         
         # Embed subtitles in video
         logger.info("Step 4/4: Embedding subtitles in video...")
-        subtitled_video = await embed_subtitles_in_video(video_path, subtitle_path, output_dir)
+        subtitled_video = embed_subtitles_in_video(video_path, subtitle_path, output_dir)
         
         end_time = time.time()
         processing_time = end_time - start_time
@@ -587,19 +587,91 @@ async def create_english_subtitles(video_path, transcript_segments, detected_lan
 
 # Keep the existing embed_subtitles_in_video function as is
 
-async def embed_subtitles_in_video(video_path, subtitle_path, output_dir):
-    """
-    Embed subtitles into a video file.
+# async def embed_subtitles_in_video(video_path, subtitle_path, output_dir):
+#     """
+#     Embed subtitles into a video file.
     
-    Args:
-        video_path: Path to the video file
-        subtitle_path: Path to the subtitle file
-        output_dir: Directory to save the output video
+#     Args:
+#         video_path: Path to the video file
+#         subtitle_path: Path to the subtitle file
+#         output_dir: Directory to save the output video
         
-    Returns:
-        Path to the subtitled video
+#     Returns:
+#         Path to the subtitled video
+#     """
+#     try:
+#         # Create output directory
+#         subtitled_dir = os.path.join(output_dir, "subtitled")
+#         os.makedirs(subtitled_dir, exist_ok=True)
+        
+#         # Generate output file path
+#         video_filename = os.path.basename(video_path)
+#         base_name, ext = os.path.splitext(video_filename)
+#         output_path = os.path.join(subtitled_dir, f"{base_name}_subtitled{ext}")
+        
+#         # Fix: Properly escape the path for FFmpeg
+#         # On Windows, we need to ensure the path is properly formatted
+#         subtitle_path_escaped = subtitle_path.replace('\\', '\\\\')
+        
+#         # Use subtitle filter to hardcode subtitles
+#         logger.info("Hardcoding subtitles into video...")
+#         ffmpeg_command = [
+#             "ffmpeg", "-y",
+#             "-i", video_path,
+#             "-vf", f"subtitles='{subtitle_path_escaped}'",  # Quote and escape the path
+#             "-c:a", "copy",  # Copy audio without re-encoding
+#             output_path
+#         ]
+        
+#         process = await asyncio.create_subprocess_exec(
+#             *ffmpeg_command,
+#             stdout=asyncio.subprocess.PIPE,
+#             stderr=asyncio.subprocess.PIPE
+#         )
+        
+#         stdout, stderr = await process.communicate()
+        
+#         if process.returncode != 0:
+#             logger.error(f"Subtitling failed: {stderr.decode()}")
+            
+#             # Try alternative approach with direct file input
+#             logger.info("Trying alternative method for subtitle embedding...")
+#             alt_command = [
+#                 "ffmpeg", "-y",
+#                 "-i", video_path,
+#                 "-vf", f"subtitles=filename='{subtitle_path_escaped}'",  # Alternative syntax
+#                 "-c:a", "copy",
+#                 output_path
+#             ]
+            
+#             process = await asyncio.create_subprocess_exec(
+#                 *alt_command,
+#                 stdout=asyncio.subprocess.PIPE,
+#                 stderr=asyncio.subprocess.PIPE
+#             )
+            
+#             stdout, stderr = await process.communicate()
+            
+#             if process.returncode != 0:
+#                 logger.error(f"Alternative subtitling failed: {stderr.decode()}")
+#                 return None
+        
+#         logger.info(f"Subtitled video created successfully: {output_path}")
+#         return output_path
+        
+#     except Exception as e:
+#         logger.error(f"Error embedding subtitles: {e}")
+#         import traceback
+#         logger.error(traceback.format_exc())
+#         return None
+
+def embed_subtitles_in_video(video_path, subtitle_path, output_dir):
+    """
+    Embed subtitles into a video file using synchronous subprocess.
     """
     try:
+        import subprocess
+        
         # Create output directory
         subtitled_dir = os.path.join(output_dir, "subtitled")
         os.makedirs(subtitled_dir, exist_ok=True)
@@ -610,7 +682,6 @@ async def embed_subtitles_in_video(video_path, subtitle_path, output_dir):
         output_path = os.path.join(subtitled_dir, f"{base_name}_subtitled{ext}")
         
         # Fix: Properly escape the path for FFmpeg
-        # On Windows, we need to ensure the path is properly formatted
         subtitle_path_escaped = subtitle_path.replace('\\', '\\\\')
         
         # Use subtitle filter to hardcode subtitles
@@ -623,16 +694,15 @@ async def embed_subtitles_in_video(video_path, subtitle_path, output_dir):
             output_path
         ]
         
-        process = await asyncio.create_subprocess_exec(
-            *ffmpeg_command,
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE
+        process = subprocess.run(
+            ffmpeg_command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
         )
         
-        stdout, stderr = await process.communicate()
-        
         if process.returncode != 0:
-            logger.error(f"Subtitling failed: {stderr.decode()}")
+            logger.error(f"Subtitling failed: {process.stderr}")
             
             # Try alternative approach with direct file input
             logger.info("Trying alternative method for subtitle embedding...")
@@ -644,16 +714,15 @@ async def embed_subtitles_in_video(video_path, subtitle_path, output_dir):
                 output_path
             ]
             
-            process = await asyncio.create_subprocess_exec(
-                *alt_command,
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE
+            process = subprocess.run(
+                alt_command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True
             )
             
-            stdout, stderr = await process.communicate()
-            
             if process.returncode != 0:
-                logger.error(f"Alternative subtitling failed: {stderr.decode()}")
+                logger.error(f"Alternative subtitling failed: {process.stderr}")
                 return None
         
         logger.info(f"Subtitled video created successfully: {output_path}")

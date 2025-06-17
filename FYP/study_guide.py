@@ -7,7 +7,7 @@ from logger_config import logger
 # Import your existing dependencies
 import ollama
 from transcriber import get_youtube_transcript, transcribe_video
-from summarizer import generate_response_async
+from summarizer import generate_response_with_gemini_async, generate_response_with_gemini_async
 from utils import format_timestamp
 
 
@@ -55,7 +55,7 @@ async def generate_study_guide(transcript_segments, video_info):
     """
     
     try:
-        content_analysis_response = await generate_response_async(content_analysis_prompt)
+        content_analysis_response = await generate_response_with_gemini_async(content_analysis_prompt)
         
         # Extract JSON data
         json_match = re.search(r'\{[\s\S]*\}', content_analysis_response)
@@ -112,7 +112,7 @@ async def generate_study_guide(transcript_segments, video_info):
     Return only the title with no other text.
     """
     
-    study_guide_title = await generate_response_async(study_guide_title_prompt)
+    study_guide_title = await generate_response_with_gemini_async(study_guide_title_prompt)
     study_guide_title = study_guide_title.strip().replace('"', '').replace("'", "")
     if ":" not in study_guide_title:
         study_guide_title += f": A Study Guide Based on {video_info.get('title', 'the Video')}"
@@ -169,7 +169,7 @@ async def generate_quiz_questions(full_text, content_analysis):
     Return ONLY the questions without answers or explanations, one per line, numbered 1-10.
     """
     
-    response = await generate_response_async(quiz_prompt)
+    response = await generate_response_with_gemini_async(quiz_prompt)
     
     # Clean up the response
     questions = []
@@ -226,7 +226,7 @@ async def generate_quiz_answers(full_text, content_analysis):
     Return ONLY the answers, one per numbered point.
     """
     
-    response = await generate_response_async(answers_prompt)
+    response = await generate_response_with_gemini_async(answers_prompt)
     
     # Parse answers with the same approach as questions
     answers = []
@@ -283,7 +283,7 @@ async def generate_essay_questions(full_text, content_analysis):
     Return only the 5 essay questions, one per line. Number them 1-5.
     """
     
-    response = await generate_response_async(essay_prompt)
+    response = await generate_response_with_gemini_async(essay_prompt)
     
     # Parse the essay questions
     essay_questions = []
@@ -339,7 +339,7 @@ async def generate_key_terms_glossary(full_text, content_analysis):
     Return ONLY the glossary entries, one term per line, in alphabetical order.
     """
     
-    response = await generate_response_async(glossary_prompt)
+    response = await generate_response_with_gemini_async(glossary_prompt)
     
     # Parse the glossary entries
     glossary_entries = []
@@ -432,7 +432,7 @@ async def generate_section_summaries(transcript_segments, content_analysis):
         Return only the summary with no additional text.
         """
         
-        summary = await generate_response_async(summary_prompt)
+        summary = await generate_response_with_gemini_async(summary_prompt)
         
         section_summaries.append({
             "timestamp": timestamp,
@@ -505,7 +505,7 @@ async def save_study_guide(formatted_study_guide, video_title):
         
         # Create a file name based on the video title
         safe_title = re.sub(r'[^\w\s-]', '', video_title).strip().replace(' ', '_')
-        file_name = f"{safe_title}_study_guide.md"
+        file_name = f"{safe_title}_study_guide.txt"
         file_path = os.path.join(output_dir, file_name)
         
         # Write to file
@@ -562,7 +562,7 @@ async def generate_faq(transcript_segments, video_info):
     """
     
     logger.info("Generating FAQ for video content...")
-    response = await generate_response_async(prompt)
+    response = await generate_response_with_gemini_async(prompt)
     raw_content = response
     
     # Extract JSON from response
@@ -629,3 +629,93 @@ async def generate_faq(transcript_segments, video_info):
         faq_data = {"faq": faq_list}
     
     return faq_data.get("faq", [])
+
+async def generate_suggested_questions(transcript_segments, video_info):
+    """
+    Generate suggested questions about the video content for a chatbot interface.
+    
+    Args:
+        transcript_segments: List of (start_time, end_time, text) tuples
+        video_info: Dictionary with video metadata
+        
+    Returns:
+        List of suggested questions
+    """
+    # Extract full text from transcript
+    full_text = " ".join([seg[2] for seg in transcript_segments])
+    
+    # Create a prompt for generating suggested questions
+    prompt = f"""
+    Based on this video transcript, generate 5 suggested questions that users might want to ask a chatbot.
+    
+    VIDEO TITLE: {video_info.get('title', 'Unknown')}
+    VIDEO DESCRIPTION: {video_info.get('description', 'No description')}
+    
+    TRANSCRIPT EXCERPT:
+    {full_text[:3000]}... [truncated]
+    
+    For each question:
+    1. The question should be specific to the content
+    2. It should target important or interesting information from the video
+    3. Questions should be standalone and not require seeing answers
+    4. Questions should entice users to engage with the chatbot
+    
+    Return the results in this JSON format:
+    {{
+        "suggested_questions": [
+            "First question here?",
+            "Second question here?",
+            ...
+        ]
+    }}
+    """
+    
+    logger.info("Generating suggested questions for chatbot interface...")
+    response = await generate_response_with_gemini_async(prompt)
+    raw_content = response
+    
+    # Extract JSON from response
+    questions_data = None
+    try:
+        # Try to directly parse the response as JSON
+        questions_data = json.loads(raw_content)
+    except json.JSONDecodeError:
+        # Try to extract JSON using regex
+        logger.info("Direct JSON parsing failed, trying regex extraction...")
+        json_match = re.search(r'\{[\s\S]*\}', raw_content)
+        if json_match:
+            try:
+                questions_data = json.loads(json_match.group(0))
+            except json.JSONDecodeError:
+                logger.warning("JSON extraction failed")
+    
+    # If JSON parsing fails, create a structured response manually
+    if not questions_data or "suggested_questions" not in questions_data:
+        logger.warning("Creating structured questions manually from text response")
+        questions_list = []
+        
+        # Try to extract questions from text
+        lines = raw_content.split('\n')
+        
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+                
+            # Check if line contains a question
+            q_match = re.search(r'(.+\?)', line)
+            if q_match:
+                question = q_match.group(1).strip()
+                # Remove numbering if present
+                question = re.sub(r'^(\d+[\)\.])?\s*', '', question)
+                questions_list.append(question)
+            elif ":" in line:
+                # Handle "Q: question" format
+                parts = line.split(":", 1)
+                if parts[0].strip().lower() in ["q", "question"]:
+                    question = parts[1].strip()
+                    questions_list.append(question)
+        
+        questions_data = {"suggested_questions": questions_list}
+    
+    return questions_data.get("suggested_questions", [])
